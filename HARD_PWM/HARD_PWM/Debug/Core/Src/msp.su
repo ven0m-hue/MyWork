@@ -1,4 +1,4 @@
-../Core/Src/msp.c:13:6:HAL_MspInit	8	static
-../Core/Src/msp.c:31:6:HAL_TIM_PWM_MspInit	72	static
-../Core/Src/msp.c:62:6:HAL_TIM_Base_MspInit	24	static
-../Core/Src/msp.c:78:6:HAL_UART_MspInit	48	static
+../Core/Src/msp.c:17:6:HAL_MspInit	8	static
+../Core/Src/msp.c:35:6:HAL_TIM_PWM_MspInit	32	static
+../Core/Src/msp.c:66:6:HAL_UART_MspInit	48	static
+../Core/Src/msp.c:106:6:HAL_TIM_Encoder_MspInit	48	static
