@@ -1,4 +1,3 @@
-"./Core/Src/FLASH_SECTOR_F4.o"
 "./Core/Src/PID.o"
 "./Core/Src/it.o"
 "./Core/Src/main.o"

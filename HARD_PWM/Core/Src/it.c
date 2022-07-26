@@ -29,6 +29,8 @@ extern bool recepCmplt1;
 extern uint32_t Data1;
 
 
+extern bool bay_door_close;
+
 //Internal Variable
 char* data_btn = "Pressed!!!!";
 char* E_Stop = "Emergency Stop";
@@ -68,6 +70,7 @@ void USART2_IRQHandler(void)
 
 				if(Data >= 0)
 				{
+					HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, GPIO_PIN_RESET); //GPIOC and PIN_0 changed
 					HAL_GPIO_WritePin(GPIOC, GPIO_PIN_0, GPIO_PIN_RESET);
 					__HAL_TIM_SET_COMPARE(&tim3, TIM_CHANNEL_1, tim3.Init.Period * _8_BIT_MAP(Data)/100);
 
@@ -75,6 +78,7 @@ void USART2_IRQHandler(void)
 
 				else
 				{
+					HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, GPIO_PIN_SET); //GPIOC and PIN_0 changed
 					HAL_GPIO_WritePin(GPIOC, GPIO_PIN_0, GPIO_PIN_SET);
 					__HAL_TIM_SET_COMPARE(&tim3, TIM_CHANNEL_1, tim3.Init.Period * _8_BIT_MAP(-Data)/100);
 
@@ -93,8 +97,11 @@ void USART2_IRQHandler(void)
 			memset(data_buffer, 0, sizeof(data_buffer));
 			__HAL_TIM_SET_COMPARE(&tim3, TIM_CHANNEL_1, tim3.Init.Period * _8_BIT_MAP(0)/100);
 			HAL_GPIO_DeInit(GPIOA, GPIO_PIN_6);
+		}
+		else if(receivedData == 'r')
+		{
 
-			//HAL_Delay(2000);
+			HAL_GPIO_Init(GPIOA, &tim3ch1gpio);
 		}
 
 		else
@@ -131,8 +138,28 @@ void EXTI1_IRQHandler()
 void EXTI2_IRQHandler()
 {
 	/*
-	 * This is for the Bay Roof
+	 * This is for the Bay Roof. After triggering...
+	 * 1.Turn off the winch motor --> Currently it does not solve the double triggering issue.
+	 * 2.Initiate the bay close door seq.
 	 */
+
+	HAL_UART_Transmit(&huart2, (uint8_t *)parked, strlen(parked), HAL_MAX_DELAY);
+
+	__HAL_TIM_SET_COMPARE(&tim3, TIM_CHANNEL_1, tim3.Init.Period * _8_BIT_MAP(0)/100);
+
+
+	//Flip the bay_door flag to initiate bayclose door seq
+	bay_door_close = true;
+
+
+	HAL_GPIO_WritePin(GPIOC, GPIO_PIN_0, GPIO_PIN_RESET);
+
+	for(int i =0; i<6000; i++){
+
+		__HAL_TIM_SET_COMPARE(&tim3, TIM_CHANNEL_1, tim3.Init.Period * _8_BIT_MAP(20)/100);
+	}
+
+	__HAL_TIM_SET_COMPARE(&tim3, TIM_CHANNEL_1, tim3.Init.Period * _8_BIT_MAP(0)/100);
 
 	HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_2);
 }
@@ -142,10 +169,6 @@ void EXTI3_IRQHandler()
 	/*
 	 * This is for the Bay Door
 	 */
-
-	HAL_UART_Transmit(&huart2, (uint8_t *)parked, strlen(parked), HAL_MAX_DELAY);
-
-	__HAL_TIM_SET_COMPARE(&tim3, TIM_CHANNEL_1, tim3.Init.Period * 0/100);
 
 	HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_3);
 }

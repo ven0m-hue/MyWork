@@ -10,10 +10,6 @@
 extern UART_HandleTypeDef huart2;
 extern UART_HandleTypeDef huart1;
 
-
-GPIO_InitTypeDef tim2ch1gpio;
-GPIO_InitTypeDef tim3ch1gpio;
-
 void HAL_MspInit(void)
 {
 	/*
@@ -34,7 +30,8 @@ void HAL_MspInit(void)
 
 void HAL_TIM_PWM_MspInit(TIM_HandleTypeDef *htim)
 {
-
+	GPIO_InitTypeDef tim2ch1gpio;
+	GPIO_InitTypeDef tim3ch1gpio;
 	/*
 	 * 1.Enable the peripheral clocks
 	 * 2.Config the gpio pins to its respective alternate functionality pins refer datasheet
@@ -46,7 +43,7 @@ void HAL_TIM_PWM_MspInit(TIM_HandleTypeDef *htim)
 	__HAL_RCC_GPIOA_CLK_ENABLE();
 	__HAL_RCC_GPIOB_CLK_ENABLE();
 
-	tim3ch1gpio.Pin = GPIO_PIN_0 | GPIO_PIN_1 | GPIO_PIN_6 | GPIO_PIN_7 ; // Added GPIO Pin to Control the LED using PWM
+	tim3ch1gpio.Pin = GPIO_PIN_0 | GPIO_PIN_1 | GPIO_PIN_6; // Added GPIO Pin to Control the LED using PWM
 	tim3ch1gpio.Mode = GPIO_MODE_AF_PP;
 	tim3ch1gpio.Alternate = GPIO_AF2_TIM3; // According to the data sheet
 	HAL_GPIO_Init(GPIOA, &tim3ch1gpio);
@@ -57,8 +54,23 @@ void HAL_TIM_PWM_MspInit(TIM_HandleTypeDef *htim)
 	HAL_GPIO_Init(GPIOB, &tim2ch1gpio);
 
 	HAL_NVIC_EnableIRQ(TIM2_IRQn);
-	HAL_NVIC_SetPriority(TIM2_IRQn, 14, 0);
+	HAL_NVIC_SetPriority(TIM2_IRQn, 15, 0);
 
+
+}
+
+void HAL_TIM_Base_MspInit(TIM_HandleTypeDef *htim)
+{
+	/*
+		 * here we are going to do the low level inits. of the USART2 peripheral
+		 * 1. Enable the clock of TIM6 peripheral and GPIOA peripheral
+		 * 2. Enable the IRQ of IRQ and set up the priority
+		 */
+	__HAL_RCC_TIM2_CLK_ENABLE();
+
+
+	HAL_NVIC_EnableIRQ(TIM2_IRQn);
+	HAL_NVIC_SetPriority(TIM2_IRQn, 15, 0);
 
 }
 
@@ -101,34 +113,4 @@ void HAL_UART_MspInit(UART_HandleTypeDef *huart)
 
 }
 
-
-
-void HAL_TIM_Encoder_MspInit(TIM_HandleTypeDef* htim_encoder)
-{
-  GPIO_InitTypeDef GPIO_InitStruct = {0};
-  if(htim_encoder->Instance==TIM2)
-  {
-
-    /* Peripheral clock enable */
-    __HAL_RCC_TIM2_CLK_ENABLE();
-
-    __HAL_RCC_GPIOA_CLK_ENABLE();
-    /**TIM2 GPIO Configuration
-    PA0-WKUP     ------> TIM2_CH1
-    PA1     ------> TIM2_CH2
-    */
-    GPIO_InitStruct.Pin = GPIO_PIN_0|GPIO_PIN_1;
-    GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
-    GPIO_InitStruct.Pull = GPIO_NOPULL;
-    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-    GPIO_InitStruct.Alternate = GPIO_AF1_TIM2;
-    HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
-
-    /* TIM2 interrupt Init */
-    HAL_NVIC_SetPriority(TIM2_IRQn, 0, 0);
-    HAL_NVIC_EnableIRQ(TIM2_IRQn);
-
-  }
-
-}
 

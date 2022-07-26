@@ -7,7 +7,7 @@
 
 //Includes
 #include "main.h"
-
+#include "stdbool.h"
 
 #define MAX_DUTYCYCLE 			255   //16bit timer
 
@@ -26,7 +26,7 @@
 
 
 
-#define PWM_RAMP_DOWN_DURATION  75
+#define PWM_RAMP_DOWN_DURATION  85//For heavier payload  lighter payload ->75
 
 #define PWM_WINCH_DOWN_RAMP_DOWN_DURATION	30
 
@@ -46,6 +46,12 @@ uint16_t gp_i = 64;
 #define DELAY_255			3000
 #define PWM_255				255
 
+
+//This part is for BOMBAY_DOORS
+#define BOMBAY_OPEN_CLOSE			255
+#define BOMBAY_DOOR_ONOFF_TIME		1500
+
+
 //Prototypes
 void SystemClockConfig(uint8_t clock_freq);
 void Error_handler(void);
@@ -60,6 +66,8 @@ void MX_WINCH_DOWN_MOTO_RAMP_UP_DOWN(void);
 void MX_WINCH_UP_MOTO_RAMP_UP_DOWN(void);
 void MX_WINCH_DOWN_GP_RAMP_UP(void);
 
+void MX_BomBay_Door_Open(void);
+void MX_BomBay_Door_Close(void);
 
 void MX_Jump();
 
@@ -74,6 +82,7 @@ GPIO_InitTypeDef btn;
 GPIO_InitTypeDef ledgpio;
 GPIO_InitTypeDef ext_btn;
 GPIO_InitTypeDef m_dir;
+GPIO_InitTypeDef mdoor_dir;
 GPIO_InitTypeDef b_door;
 GPIO_InitTypeDef b_roof;
 
@@ -122,6 +131,10 @@ int16_t Pulse = 0;
 //Variable to store the Counts
 uint32_t Counts = 0;
 
+
+//Bool flag for the bombay door close
+bool bay_door_close = false;
+
 void Universal_Inits() {
 
 	HAL_Init();
@@ -141,7 +154,6 @@ int main()
 
 	Universal_Inits();
 
-
 	memset(buf, 0, sizeof(buf));
 
 	//Transmit to the terminal at start
@@ -152,10 +164,13 @@ int main()
 	if(HAL_TIM_Encoder_Start_IT(&tim2, TIM_CHANNEL_ALL) != HAL_OK)  Error_handler();
 
 	if (HAL_TIM_PWM_Start(&tim3, TIM_CHANNEL_1) != HAL_OK) Error_handler();
+	if (HAL_TIM_PWM_Start(&tim3, TIM_CHANNEL_2) != HAL_OK) Error_handler();
+
 
 //	HAL_Delay(2000);
 
 	HAL_GPIO_WritePin(GPIOC, GPIO_PIN_0, GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, GPIO_PIN_RESET);
 
 //	__HAL_TIM_SET_COMPARE(&tim3, TIM_CHANNEL_1, tim3.Init.Period * _8_BIT_MAP(10)/100);
 //	MX_MOTO_RAMP_UP();   //ACCEL Phase
@@ -166,17 +181,37 @@ int main()
 //	MX_MOTO_RAMP_DOWN();  //DACCEL Phase
 
 	///////////////////////////////////////////////////////////
-    MX_WINCH_DOWN_GP_RAMP_UP();
-	MX_WINCH_DOWN_MOTO_RAMP_UP_DOWN();
-	HAL_Delay(5000);
-	MX_WINCH_UP_MOTO_RAMP_UP_DOWN();
-	while(1){
 
-//		gp_i = 512;
-//
-//		MX_GP_RAMP_UP();
-//		MX_WINCH_DOWN_MOTO_RAMP_UP_DOWN();
-	};
+	//MX_BomBay_Door_Close();
+	MX_BomBay_Door_Open();
+
+	HAL_Delay(1000);
+
+	/*
+	 * Winch Down With Payload begin Sequence
+	 */
+//	MX_WINCH_DOWN_GP_RAMP_UP();
+//	MX_WINCH_DOWN_MOTO_RAMP_UP_DOWN();
+
+
+	/*
+	 * This portion of the code deals with winch up sequence
+	 */
+	//This is the wait period for the winch up sequence.
+	//HAL_Delay(5000);
+
+	//MX_WINCH_UP_MOTO_RAMP_UP_DOWN();
+
+
+	//Until the flag for door open is not set do nothing
+	while(!(bay_door_close));
+
+	//If it breaks the loop, it means hook has reached the bay roof
+	//Start the Door Close sequence
+	MX_BomBay_Door_Close();
+
+
+	while(1){};
 
 }
 
@@ -225,6 +260,48 @@ void HAL_SYSTICK_Callback()
 }
 
 
+void MX_BomBay_Door_Open(void)
+{
+
+	if(BOMBAY_OPEN_CLOSE > 0)
+	{
+		HAL_GPIO_WritePin(GPIOC, GPIO_PIN_0, GPIO_PIN_RESET);
+		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, GPIO_PIN_RESET);
+		__HAL_TIM_SET_COMPARE(&tim3, TIM_CHANNEL_2, tim3.Init.Period * _8_BIT_MAP(BOMBAY_OPEN_CLOSE)/100);
+
+		HAL_Delay(BOMBAY_DOOR_ONOFF_TIME);
+
+		__HAL_TIM_SET_COMPARE(&tim3, TIM_CHANNEL_2, tim3.Init.Period * _8_BIT_MAP(0)/100);
+
+	}
+
+	else
+	{
+		//Halt and Do nothing.
+		MX_Jump();
+	}
+}
+
+
+void MX_BomBay_Door_Close()
+{
+	if(BOMBAY_OPEN_CLOSE > 0)
+	{
+		HAL_GPIO_WritePin(GPIOC, GPIO_PIN_0, GPIO_PIN_SET);
+		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, GPIO_PIN_SET);
+		__HAL_TIM_SET_COMPARE(&tim3, TIM_CHANNEL_2, tim3.Init.Period * _8_BIT_MAP(BOMBAY_OPEN_CLOSE)/100);
+
+		HAL_Delay(1600);
+		__HAL_TIM_SET_COMPARE(&tim3, TIM_CHANNEL_2, tim3.Init.Period * _8_BIT_MAP(0)/100);
+	}
+
+	else
+	{
+		//Halt and Do nothing.
+		MX_Jump();
+
+	}
+}
 
 
 //
@@ -363,8 +440,8 @@ void MX_WINCH_UP_MOTO_RAMP_UP_DOWN(void)
 
 		HAL_UART_Transmit(&huart2, (uint8_t *)buf, sizeof(buf), HAL_MAX_DELAY);
 
-	HAL_Delay(100);
 }
+
 
 
 
@@ -383,7 +460,14 @@ void GPIO_Init(void)
 	__HAL_RCC_GPIOC_CLK_ENABLE(); //Enable the clock
 	__HAL_RCC_GPIOA_CLK_ENABLE();
 
+	//This is for the Door Motor
+	mdoor_dir.Pin = GPIO_PIN_8;
+	mdoor_dir.Mode = GPIO_MODE_OUTPUT_PP;
+	mdoor_dir.Pull = GPIO_NOPULL;
+	mdoor_dir.Speed = GPIO_SPEED_FREQ_LOW;
+	HAL_GPIO_Init(GPIOA, &mdoor_dir);
 
+	//This is for the Winch Motor
 	m_dir.Pin = GPIO_PIN_0;
 	m_dir.Mode = GPIO_MODE_OUTPUT_PP;
 	m_dir.Pull = GPIO_NOPULL;
@@ -419,11 +503,13 @@ void GPIO_Init(void)
 	HAL_NVIC_EnableIRQ(EXTI3_IRQn);
 	HAL_NVIC_SetPriority(EXTI3_IRQn,15,0);
 
+	//This is for the inbuilt led
 	ledgpio.Pin = GPIO_PIN_5;
 	ledgpio.Mode = GPIO_MODE_OUTPUT_PP;
 	ledgpio.Pull = GPIO_NOPULL;
 	HAL_GPIO_Init(GPIOA,&ledgpio);
 
+	//This is for the inbuilt btn int
 	btn.Pin = GPIO_PIN_13;
 	btn.Mode = GPIO_MODE_IT_RISING;
 	btn.Pull = GPIO_PULLUP;
@@ -466,6 +552,9 @@ void Timer3_Init(void)
 	timerPWMconfig.Pulse = tim3.Init.Period * 0/100;
 	if(HAL_TIM_PWM_ConfigChannel(&tim3, &timerPWMconfig, TIM_CHANNEL_1) != HAL_OK) Error_handler();
 
+
+	timerPWMconfig.Pulse = tim3.Init.Period * 0/100;
+	if(HAL_TIM_PWM_ConfigChannel(&tim3, &timerPWMconfig, TIM_CHANNEL_2) != HAL_OK) Error_handler();
 
 
 #if 0
