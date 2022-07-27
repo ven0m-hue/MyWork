@@ -5,6 +5,21 @@
  *      Author: Venom
  */
 
+
+
+/*
+ * TODO:
+ * 1. DeBouncing Effect with the interrupt mode, possibly using the TimePeriodElaspsed Callback
+ * in order to dampen out the effect.
+ *
+ * 2. Figure out why is the close door false triggering.
+ */
+
+
+
+
+
+
 //Includes
 #include "main.h"
 #include "stdbool.h"
@@ -14,6 +29,9 @@
 #define PWM_START 				121
 #define INTERMITENT_DC			180
 
+
+//For Winch Up start
+#define PWM_UP_START			30
 
 #define STEP 					1    // Mapping it with the 8bit 255 gives each step 257 ie. 65535/255 = 257
 
@@ -135,6 +153,12 @@ uint32_t Counts = 0;
 //Bool flag for the bombay door close
 bool bay_door_close = false;
 
+
+//Variable for bounce counts for spring thing
+uint8_t bounce_count = 0;
+
+bool poop_back = false;
+
 void Universal_Inits() {
 
 	HAL_Init();
@@ -183,16 +207,19 @@ int main()
 	///////////////////////////////////////////////////////////
 
 	//MX_BomBay_Door_Close();
-	MX_BomBay_Door_Open();
+	//MX_BomBay_Door_Open();
 
-	HAL_Delay(1000);
+	//HAL_Delay(1000);
 
 	/*
 	 * Winch Down With Payload begin Sequence
 	 */
-//	MX_WINCH_DOWN_GP_RAMP_UP();
-//	MX_WINCH_DOWN_MOTO_RAMP_UP_DOWN();
+	MX_WINCH_DOWN_GP_RAMP_UP();
+	MX_WINCH_DOWN_MOTO_RAMP_UP_DOWN();
 
+
+
+	//if (HAL_TIM_PWM_Start(&tim3, TIM_CHANNEL_1) != HAL_OK) Error_handler();
 
 	/*
 	 * This portion of the code deals with winch up sequence
@@ -356,6 +383,9 @@ void MX_WINCH_DOWN_MOTO_RAMP_UP_DOWN(void)
 		HAL_Delay(PWM_INTERMITANT_UP);    //This finishes the ramp up in
 	}
 
+	//
+	poop_back = true;
+
 
 	for(i = INTERMITENT_DC; i> 0; i -- )
 		{
@@ -380,11 +410,11 @@ void MX_WINCH_UP_MOTO_RAMP_UP_DOWN(void)
 	HAL_GPIO_WritePin(GPIOC, GPIO_PIN_0, GPIO_PIN_SET);
 
 
-	uint32_t loop_5 = Counts * 0.04;  //Set the threshold
+	uint32_t loop_5 = Counts * 0.1;  //Set the threshold
 
 	//Ramp Up Sequence
 
-	for(i = PWM_START; i< INTERMITENT_DC; i ++ )
+	for(i = PWM_UP_START; i< INTERMITENT_DC; i ++ )
 	{
 		if(Pulse > loop_5)
 		{
