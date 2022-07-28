@@ -8,14 +8,12 @@ Winch firmware.
     Sys_tick for the heart beat and other time related checks.
   
     External Interrupts:
-    1. One Ext interrupt for the Spring Thing.
-    2. One Ext interrupt for the Bay Roof.
-    3. One Ext interrupt for the Bay Door(Optinal).
+    * One Ext interrupt for the Spring Thing.
+    * One Ext interrupt for the Bay Roof.
+    * One Ext interrupt for the Bay Door(Optinal).
 
   
 2. Encoder Count based feedBack for the Winch Up Sequence.
-
-
 
 What's Working:
 
@@ -23,11 +21,18 @@ What's Working:
 2. Time Based winch down with the lighter payload ie. .5-1kg
 3. Winch Up for the lighter payload is working. 
 
+4. Winch Down with the Spring thing tested for the heavier payload.
+5. Winch Up sequence based on the Feedback Enocder count. Verified.
 
 What's in Progress:
+1. It  would be nice for it to winch up just after the spring gets triggered to avoid slack.
 
-1. Winch Down with the Spring thing is left out for the heavier payload.
-2. Winch Up sequence based on the Feedback Enocder count. Not yet verified and casuing troubles. 
+TODO:
+
+1. DeBouncing Effect with the interrupt mode, possibly using the TimePeriodElaspsed Callback
+   in order to dampen out the effect.
+ 
+2. Figure out why is the close door false triggering.
 
 Near Future:
 1. PID Based winch Up sequence.
