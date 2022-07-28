@@ -13,6 +13,8 @@
  * in order to dampen out the effect.
  *
  * 2. Figure out why is the close door false triggering.
+ *
+ * 3. It  would be nice for it to winch up just after the spring gets triggered to avoid slack
  */
 
 
@@ -48,7 +50,7 @@
 
 #define PWM_WINCH_DOWN_RAMP_DOWN_DURATION	30
 
-#define PWM_CONSTANT 			20
+#define PWM_CONSTANT 			30
 
 
 #define ENCODER_RAMP_UP_COUNT 		PWM_RAMP_UP_DURATION * 205
@@ -155,9 +157,10 @@ bool bay_door_close = false;
 
 
 //Variable for bounce counts for spring thing
-uint8_t bounce_count = 0;
-
 bool poop_back = false;
+
+//Variable for the PWM Enable protection
+bool spring_trig = false;
 
 void Universal_Inits() {
 
@@ -191,43 +194,53 @@ int main()
 	if (HAL_TIM_PWM_Start(&tim3, TIM_CHANNEL_2) != HAL_OK) Error_handler();
 
 
-//	HAL_Delay(2000);
-
 	HAL_GPIO_WritePin(GPIOC, GPIO_PIN_0, GPIO_PIN_RESET);
 	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, GPIO_PIN_RESET);
 
-//	__HAL_TIM_SET_COMPARE(&tim3, TIM_CHANNEL_1, tim3.Init.Period * _8_BIT_MAP(10)/100);
-//	MX_MOTO_RAMP_UP();   //ACCEL Phase
-
-//	__HAL_TIM_SET_COMPARE(&tim3, TIM_CHANNEL_1, tim3.Init.Period * _8_BIT_MAP(0)/100);
-	//HAL_Delay(1000);   //Const Phase
-
-//	MX_MOTO_RAMP_DOWN();  //DACCEL Phase
 
 	///////////////////////////////////////////////////////////
 
-	//MX_BomBay_Door_Close();
-	//MX_BomBay_Door_Open();
-
-	//HAL_Delay(1000);
-
 	/*
-	 * Winch Down With Payload begin Sequence
+	 * Winch Down With Payload Sequence
+	 *
+	 * 1. Initial GP sequence so as to reduce the initial stuttering issue.
+	 * 2. Winch Down with Time Based RampUp and RampDown Sequence.
+	 * 3. Spring thing activated, once the payload soft lands the spring triggers.
+	 * 4. In the backend the encoder keeps counting and stores the final count as the setPoint for the winch up sequence.
+	 *
+	 * Spring triggering is the end of Winch Down Sequence.
 	 */
+
+	MX_BomBay_Door_Open();
+
+	HAL_Delay(1000); //Delay for the door to settle and prep for winch down.
+
 	MX_WINCH_DOWN_GP_RAMP_UP();
 	MX_WINCH_DOWN_MOTO_RAMP_UP_DOWN();
 
 
+	if(spring_trig)
+	{
+		if (HAL_TIM_PWM_Start(&tim3, TIM_CHANNEL_1) != HAL_OK) Error_handler();
+	}
 
-	//if (HAL_TIM_PWM_Start(&tim3, TIM_CHANNEL_1) != HAL_OK) Error_handler();
+	//End of the winch down sequence.
 
 	/*
-	 * This portion of the code deals with winch up sequence
+	 * This portion of the code deals with winch up sequence,
+	 * 1. For now time based wait, specified now for testing 5 sec.
+	 * 2. Stating the Motor Ramp Up sequence.
+	 * 3. After threshold counts elapses run at a constant rate. Wait for the hook to trigger the roof switch.
+	 * 4. Once the roof switch triggers, initiate the Mission End Sequence.
+	 * 5. Mission End Sequence: Cut down the motor supply, close the door.
+	 *
+	 * note TODO: current sensor interfacing.
+	 *
 	 */
 	//This is the wait period for the winch up sequence.
-	//HAL_Delay(5000);
+	HAL_Delay(5000);
 
-	//MX_WINCH_UP_MOTO_RAMP_UP_DOWN();
+	MX_WINCH_UP_MOTO_RAMP_UP_DOWN();
 
 
 	//Until the flag for door open is not set do nothing
@@ -383,8 +396,9 @@ void MX_WINCH_DOWN_MOTO_RAMP_UP_DOWN(void)
 		HAL_Delay(PWM_INTERMITANT_UP);    //This finishes the ramp up in
 	}
 
-	//
+	//Its only after this point the Spring thing needs to be activated
 	poop_back = true;
+
 
 
 	for(i = INTERMITENT_DC; i> 0; i -- )
@@ -873,6 +887,7 @@ void UART1_Init(void)
 
 void Error_handler(void)
 {
+
 	while(1);
 }
 

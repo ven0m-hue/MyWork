@@ -36,11 +36,8 @@ char* data_btn = "Pressed!!!!";
 char* E_Stop = "Emergency Stop";
 char* parked = "Payload Parked";
 
-
-extern uint8_t bounce_count;
-
 extern bool poop_back;
-
+extern bool spring_trig;
 //Core Tick Interrupt
 
 void SysTick_Handler(void)
@@ -135,8 +132,6 @@ void EXTI1_IRQHandler()
 	 *  PC1
 	 */
 
-	bounce_count ++;
-
 	if(poop_back)
 	{
 		HAL_UART_Transmit(&huart2, (uint8_t *)data_btn, strlen(data_btn), HAL_MAX_DELAY);
@@ -147,6 +142,7 @@ void EXTI1_IRQHandler()
 
 
 		poop_back = false;
+		spring_trig = true;
 
 	}
 
