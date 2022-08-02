@@ -15,6 +15,11 @@ Winch firmware.
   
 2. Encoder Count based feedBack for the Winch Up Sequence.
 
+
+3. Test Data 
+  * Test Data which includes Raw PWM, Enocoder Counts, Current measurement data.
+
+
 What's Working:
 
 1. Bombay Door Mechanism 
@@ -23,6 +28,8 @@ What's Working:
 
 4. Winch Down with the Spring thing tested for the heavier payload.
 5. Winch Up sequence based on the Feedback Enocder count. Verified.
+
+
 
 What's in Progress:
 1. It  would be nice for it to winch up just after the spring gets triggered to avoid slack.
