@@ -1,0 +1,1915 @@
+
+
+
+REDWING LABS
+
+REDWING LABS
+
+Period: 64, 0
+
+Period: 32, 0
+
+Period: 16, 0
+
+PWM: 121, 0
+
+
+PWM: 122, 0
+
+
+PWM: 123, 0
+
+
+PWM: 124, 1
+
+
+PWM: 125, 3
+
+
+PWM: 126, 4
+
+
+PWM: 127, 5
+
+
+PWM: 128, 6
+
+
+PWM: 129, 8
+
+
+PWM: 130, 9
+
+
+PWM: 131, 11
+
+PWM: 132, 12
+
+PWM: 133, 14
+
+PWM: 134, 15
+
+PWM: 135, 16
+
+PWM: 136, 18
+
+PWM: 137, 19
+
+PWM: 138, 21
+
+PWM: 139, 22
+
+PWM: 140, 23
+
+PWM: 141, 25
+
+PWM: 142, 26
+
+PWM: 143, 28
+
+PWM: 144, 29
+
+PWM: 145, 31
+
+PWM: 146, 32
+
+PWM: 147, 34
+
+PWM: 148, 35
+
+PWM: 149, 37
+
+PWM: 150, 38
+
+PWM: 151, 40
+
+PWM: 152, 41
+
+PWM: 153, 43
+
+PWM: 154, 44
+
+PWM: 155, 46
+
+PWM: 156, 47
+
+PWM: 157, 49
+
+PWM: 158, 51
+
+PWM: 159, 52
+
+PWM: 160, 54
+
+PWM: 161, 55
+
+PWM: 162, 57
+
+PWM: 163, 59
+
+PWM: 164, 61
+
+PWM: 165, 62
+
+PWM: 166, 64
+
+PWM: 167, 66
+
+PWM: 168, 67
+
+PWM: 169, 69
+
+PWM: 170, 71
+
+PWM: 171, 73
+
+PWM: 172, 74
+
+PWM: 173, 76
+
+PWM: 174, 78
+
+PWM: 175, 80
+
+PWM: 176, 81
+
+PWM: 177, 83
+
+PWM: 178, 85
+
+PWM: 179, 87
+
+PWM: 180, 89
+
+PWM: 179, 95
+
+PWM: 178, 102
+
+PWM: 177, 108
+
+PWM: 176, 115
+
+PWM: 175, 121
+
+PWM: 174, 128
+
+PWM: 173, 134
+
+PWM: 172, 141
+
+PWM: 171, 147
+
+PWM: 170, 153
+
+PWM: 169, 159
+
+PWM: 168, 166
+
+PWM: 167, 172
+
+PWM: 166, 178
+
+PWM: 165, 184
+
+PWM: 164, 190
+
+PWM: 163, 196
+
+PWM: 162, 202
+
+PWM: 161, 208
+
+PWM: 160, 214
+
+PWM: 159, 220
+
+PWM: 158, 226
+
+PWM: 157, 232
+
+PWM: 156, 238
+
+PWM: 155, 243
+
+PWM: 154, 249
+
+PWM: 153, 255
+
+PWM: 152, 261
+
+PWM: 151, 266
+
+PWM: 150, 272
+
+PWM: 149, 277
+
+PWM: 148, 283
+
+PWM: 147, 288
+
+TICKS: 292
+
+
+
+PWM: 146, 294
+
+PWM: 145, 299
+
+PWM: 144, 305
+
+PWM: 143, 310
+
+PWM: 142, 315
+
+PWM: 141, 320
+
+PWM: 140, 326
+
+PWM: 139, 331
+
+PWM: 138, 336
+
+PWM: 137, 341
+
+PWM: 136, 346
+
+PWM: 135, 351
+
+PWM: 134, 356
+
+PWM: 133, 361
+
+PWM: 132, 366
+
+PWM: 131, 371
+
+PWM: 130, 376
+
+PWM: 129, 380
+
+PWM: 128, 385
+
+PWM: 127, 390
+
+PWM: 126, 394
+
+PWM: 125, 399
+
+PWM: 124, 404
+
+PWM: 123, 408
+
+PWM: 122, 413
+
+PWM: 121, 417
+
+PWM: 120, 422
+
+PWM: 119, 426
+
+PWM: 118, 430
+
+PWM: 117, 435
+
+PWM: 116, 439
+
+PWM: 115, 443
+
+PWM: 114, 447
+
+PWM: 113, 451
+
+PWM: 112, 456
+
+PWM: 111, 460
+
+PWM: 110, 464
+
+PWM: 109, 468
+
+PWM: 108, 472
+
+PWM: 107, 476
+
+PWM: 106, 479
+
+PWM: 105, 483
+
+PWM: 104, 487
+
+PWM: 103, 491
+
+PWM: 102, 495
+
+PWM: 101, 498
+
+PWM: 100, 502
+
+PWM: 99, 505
+
+PWM: 98, 509
+
+PWM: 97, 513
+
+PWM: 96, 516
+
+PWM: 95, 519
+
+PWM: 94, 523
+
+PWM: 93, 526
+
+PWM: 92, 529
+
+PWM: 91, 533
+
+PWM: 90, 536
+
+PWM: 89, 539
+
+PWM: 88, 542
+
+PWM: 87, 545
+
+PWM: 86, 548
+
+PWM: 85, 551
+
+PWM: 84, 554
+
+PWM: 83, 557
+
+PWM: 82, 560
+
+PWM: 81, 563
+
+PWM: 80, 566
+
+PWM: 79, 568
+
+PWM: 78, 571
+
+PWM: 77, 574
+
+PWM: 76, 576
+
+PWM: 75, 579
+
+PWM: 74, 582
+
+PWM: 73, 584
+
+PWM: 72, 586
+
+PWM: 71, 589
+
+PWM: 70, 591
+
+PWM: 69, 594
+
+PWM: 68, 596
+
+TICKS: 597
+
+
+PWM: 67, 598
+
+PWM: 66, 600
+
+PWM: 65, 603
+
+PWM: 64, 605
+
+PWM: 63, 607
+
+PWM: 62, 609
+
+PWM: 61, 611
+
+PWM: 60, 613
+
+PWM: 59, 615
+
+PWM: 58, 616
+
+PWM: 57, 618
+
+Pressed!!!!PWM: 56, 620
+
+PWM: 55, 620
+
+PWM: 54, 620
+
+PWM: 53, 620
+
+PWM: 52, 620
+
+PWM: 51, 620
+
+PWM: 50, 620
+
+PWM: 49, 620
+
+PWM: 48, 620
+
+PWM: 47, 620
+
+PWM: 46, 620
+
+PWM: 45, 620
+
+PWM: 44, 620
+
+PWM: 43, 620
+
+PWM: 42, 620
+
+PWM: 41, 620
+
+PWM: 40, 620
+
+PWM: 39, 620
+
+PWM: 38, 620
+
+PWM: 37, 620
+
+PWM: 36, 620
+
+PWM: 35, 620
+
+PWM: 34, 620
+
+PWM: 33, 620
+
+PWM: 32, 620
+
+PWM: 31, 620
+
+PWM: 30, 620
+
+PWM: 29, 620
+
+PWM: 28, 620
+
+PWM: 27, 620
+
+PWM: 26, 620
+
+PWM: 25, 620
+
+PWM: 24, 620
+
+PWM: 23, 620
+
+PWM: 22, 620
+
+PWM: 21, 620
+
+PWM: 20, 620
+
+PWM: 19, 620
+
+PWM: 18, 620
+
+PWM: 17, 620
+
+PWM: 16, 620
+
+PWM: 15, 620
+
+PWM: 14, 620
+
+PWM: 13, 620
+
+PWM: 12, 620
+
+PWM: 11, 620
+
+PWM: 10, 620
+
+PWM: 9, 620
+
+PWM: 8, 620
+
+PWM: 7, 620
+
+PWM: 6, 620
+
+PWM: 5, 620
+
+PWM: 4, 620
+
+PWM: 3, 620
+
+PWM: 2, 620
+
+PWM: 1, 620
+
+TICKS: 620
+
+-50
+
+-50
+TICKS: 579
+
+0TICKS: 476
+
+TICKS: 373
+
+TICKS: 270
+
+TICKS: 168
+
+TICKS: 67
+
+TICKS: -9
+
+Payload ParkedPayload ParkedPayload ParkedPayload ParkedPayload ParkedPayload ParkedTICKS: -6
+
+TICKS: -6
+
+REDWING LABS
+
+Period: 64, 0
+
+Period: 32, 0
+
+Period: 16, 0
+
+PWM: 121, 0
+
+
+PWM: 122, 0
+
+
+PWM: 123, 0
+
+
+PWM: 124, 0
+
+
+PWM: 125, 0
+
+
+PWM: 126, 0
+
+
+PWM: 127, 0
+
+
+PWM: 128, 0
+
+
+PWM: 129, 0
+
+
+PWM: 130, 0
+
+
+PWM: 131, 0
+
+
+PWM: 132, 0
+
+
+PWM: 133, 0
+
+
+PWM: 134, 0
+
+
+PWM: 135, 0
+
+
+PWM: 136, 0
+
+
+PWM: 137, 0
+
+
+PWM: 138, 0
+
+
+PWM: 139, 0
+
+
+PWM: 140, 0
+
+
+PWM: 141, 0
+
+
+PWM: 142, 0
+
+
+PWM: 143, 0
+
+
+PWM: 144, 0
+
+
+PWM: 145, 0
+
+
+PWM: 146, 0
+
+
+PWM: 147, 0
+
+
+PWM: 148, 0
+
+
+PWM: 149, 0
+
+
+PWM: 150, 0
+
+
+PWM: 151, 0
+
+
+PWM: 152, 0
+
+
+PWM: 153, 0
+
+
+PWM: 154, 0
+
+
+PWM: 155, 0
+
+
+PWM: 156, 0
+
+
+PWM: 157, 0
+
+
+PWM: 158, 0
+
+
+PWM: 159, 0
+
+
+PWM: 160, 0
+
+
+PWM: 161, 0
+
+
+PWM: 162, 0
+
+
+PWM: 163, 0
+
+
+PWM: 164, 0
+
+
+PWM: 165, 0
+
+
+PWM: 166, 0
+
+
+PWM: 167, 0
+
+
+PWM: 168, 0
+
+
+PWM: 169, 0
+
+
+PWM: 170, 0
+
+
+PWM: 171, 0
+
+
+PWM: 172, 0
+
+
+PWM: 173, 0
+
+
+PWM: 174, 0
+
+
+PWM: 175, 0
+
+
+PWM: 176, 0
+
+
+PWM: 177, 0
+
+
+PWM: 178, 0
+
+
+PWM: 179, 0
+
+
+PWM: 180, 0
+
+
+PWM: 179, 0
+
+
+PWM: 178, 0
+
+
+PWM: 177, 0
+
+
+PWM: 176, 0
+
+
+PWM: 175, 0
+
+
+PWM: 174, 0
+
+
+PWM: 173, 0
+
+
+PWM: 172, 0
+
+
+PWM: 171, 0
+
+
+PWM: 170, 0
+
+
+PWM: 169, 0
+
+
+PWM: 168, 0
+
+
+PWM: 167, 0
+
+
+PWM: 166, 0
+
+
+PWM: 165, 0
+
+
+PWM: 164, 0
+
+
+PWM: 163, 0
+
+
+PWM: 162, 0
+
+
+PWM: 161, 0
+
+
+PWM: 160, 0
+
+
+PWM: 159, 0
+
+
+PWM: 158, 0
+
+
+PWM: 157, 0
+
+
+PWM: 156, 0
+
+
+PWM: 155, 0
+
+
+PWM: 154, 0
+
+
+PWM: 153, 0
+
+
+PWM: 152, 0
+
+
+PWM: 151, 0
+
+
+PWM: 150, 0
+
+
+PWM: 149, 0
+
+
+PWM: 148, 0
+
+
+PWM: 147, 0
+
+
+TICKS: 0
+
+
+
+
+PWM: 146, 0
+
+
+PWM: 145, 0
+
+
+PWM: 144, 0
+
+
+PWM: 143, 0
+
+
+PWM: 142, 0
+
+
+PWM: 141, 0
+
+
+PWM: 140, 0
+
+
+PWM: 139, 0
+
+
+PWM: 138, 0
+
+
+PWM: 137, 0
+
+
+PWM: 136, 0
+
+
+PWM: 135, 0
+
+
+PWM: 134, 0
+
+
+PWM: 133, 0
+
+
+PWM: 132, 0
+
+
+PWM: 131, 0
+
+
+PWM: 130, 0
+
+
+PWM: 129, 0
+
+
+PWM: 128, 0
+
+
+PWM: 127, 0
+
+
+PWM: 126, 0
+
+
+PWM: 125, 0
+
+
+PWM: 124, 0
+
+
+PWM: 123, 0
+
+
+PWM: 122, 0
+
+
+PWM: 121, 0
+
+
+PWM: 120, 0
+
+
+PWM: 119, 0
+
+
+PWM: 118, 0
+
+
+PWM: 117, 0
+
+
+PWM: 116, 0
+
+
+PWM: 115, 0
+
+
+PWM: 114, 0
+
+
+PWM: 113, 0
+
+
+PWM: 112, 0
+
+
+PWM: 111, 0
+
+
+PWM: 110, 0
+
+
+PWM: 109, 0
+
+
+PWM: 108, 0
+
+
+PWM: 107, 0
+
+
+PWM: 106, 0
+
+
+PWM: 105, 0
+
+
+PWM: 104, 0
+
+
+PWM: 103, 0
+
+
+PWM: 102, 0
+
+
+PWM: 101, 0
+
+
+PWM: 100, 0
+
+
+PWM: 99, 0
+
+
+PWM: 98, 0
+
+
+PWM: 97, 0
+
+
+PWM: 96, 0
+
+
+PWM: 95, 0
+
+
+PWM: 94, 0
+
+
+PWM: 93, 0
+
+
+PWM: 92, 0
+
+
+PWM: 91, 0
+
+
+PWM: 90, 0
+
+
+PWM: 89, 0
+
+
+PWM: 88, 0
+
+
+PWM: 87, 0
+
+
+PWM: 86, 0
+
+
+PWM: 85, 0
+
+
+PWM: 84, 0
+
+
+PWM: 83, 0
+
+
+PWM: 82, 0
+
+
+PWM: 81, 0
+
+
+PWM: 80, 0
+
+
+PWM: 79, 0
+
+
+PWM: 78, 0
+
+
+PWM: 77, 0
+
+
+PWM: 76, 0
+
+
+PWM: 75, 0
+
+
+PWM: 74, 0
+
+
+PWM: 73, 0
+
+
+PWM: 72, 0
+
+
+PWM: 71, 0
+
+
+PWM: 70, 0
+
+
+PWM: 69, 0
+
+
+PWM: 68, 0
+
+
+TICKS: 0
+
+
+
+PWM: 67, 0
+
+
+PWM: 66, 0
+
+
+PWM: 65, 0
+
+
+PWM: 64, 0
+
+
+PWM: 63, 0
+
+
+PWM: 62, 0
+
+
+PWM: 61, 0
+
+
+PWM: 60, 0
+
+
+PWM: 59, 0
+
+
+PWM: 58, 0
+
+
+PWM: 57, 0
+
+
+PWM: 56, 0
+
+
+PWM: 55, 0
+
+
+PWM: 54, 0
+
+
+PWM: 53, 0
+
+
+PWM: 52, 0
+
+
+PWM: 51, 0
+
+
+PWM: 50, 0
+
+
+PWM: 49, 0
+
+
+PWM: 48, 0
+
+
+PWM: 47, 0
+
+
+PWM: 46, 0
+
+
+PWM: 45, 0
+
+
+PWM: 44, 0
+
+
+PWM: 43, 0
+
+
+PWM: 42, 0
+
+
+PWM: 41, 0
+
+
+PWM: 40, 0
+
+
+PWM: 39, 0
+
+
+PWM: 38, 0
+
+
+PWM: 37, 0
+
+
+PWM: 36, 0
+
+
+PWM: 35, 0
+
+
+PWM: 34, 0
+
+
+PWM: 33, 0
+
+
+PWM: 32, 0
+
+
+PWM: 31, 0
+
+
+PWM: 30, 0
+
+
+PWM: 29, 0
+
+
+PWM: 28, 0
+
+
+PWM: 27, 0
+
+
+PWM: 26, 0
+
+
+PWM: 25, 0
+
+
+PWM: 24, 0
+
+
+PWM: 23, 0
+
+
+PWM: 22, 0
+
+
+PWM: 21, 0
+
+
+PWM: 20, 0
+
+
+PWM: 19, 0
+
+
+PWM: 18, 0
+
+
+PWM: 17, 0
+
+
+PWM: 16, 0
+
+
+PWM: 15, 0
+
+
+PWM: 14, 0
+
+
+PWM: 13, 0
+
+
+PWM: 12, 0
+
+
+PWM: 11, 0
+
+
+PWM: 10, 0
+
+
+PWM: 9, 0
+
+
+PWM: 8, 0
+
+
+PWM: 7, 0
+
+
+PWM: 6, 0
+
+
+PWM: 5, 0
+
+
+PWM: 4, 0
+
+
+PWM: 3, 0
+
+
+PWM: 2, 0
+
+
+PWM: 1, 0
+
+
+TICKS: 0
+
+
+0
+
+0
+TICKS: 0
+
+
+TICKS: 0
+
+
+-30TICKS: 0
+
+
+
+
+
+-30
+0Payload Parked
+
+
+0
+Pressed!!!!Payload ParkedPayload ParkedPayload ParkedPayload ParkedTICKS: -4
+
+
+TICKS: -4
+
+
+TICKS: -4
+
+
+TICKS: -4
+
+
+TICKS: -4
+
+
+TICKS: -4
+
+
+TICKS: -4
+
+
+Payload ParkedTICKS: -4
+
+
+TICKS: -4
+
+
+TICKS: -4
+
+
+TICKS: -4
+
+
+TICKS: -4
+
+
+REDWING LABS
+
+Period: 64, 0
+
+Period: 32, 0
+
+Period: 16, 0
+
+PWM: 121, 0
+
+
+PWM: 122, 0
+
+
+PWM: 123, 0
+
+
+PWM: 124, 1
+
+
+PWM: 125, 2
+
+
+PWM: 126, 4
+
+
+PWM: 127, 5
+
+
+PWM: 128, 6
+
+
+PWM: 129, 8
+
+
+PWM: 130, 9
+
+
+PWM: 131, 10
+
+PWM: 132, 12
+
+PWM: 133, 14
+
+PWM: 134, 15
+
+PWM: 135, 17
+
+PWM: 136, 19
+
+PWM: 137, 20
+
+PWM: 138, 22
+
+PWM: 139, 24
+
+PWM: 140, 25
+
+PWM: 141, 27
+
+PWM: 142, 28
+
+PWM: 143, 30
+
+PWM: 144, 32
+
+PWM: 145, 33
+
+PWM: 146, 35
+
+PWM: 147, 37
+
+PWM: 148, 39
+
+PWM: 149, 40
+
+PWM: 150, 42
+
+PWM: 151, 44
+
+PWM: 152, 45
+
+PWM: 153, 47
+
+PWM: 154, 49
+
+PWM: 155, 51
+
+PWM: 156, 53
+
+PWM: 157, 54
+
+PWM: 158, 56
+
+PWM: 159, 58
+
+PWM: 160, 60
+
+PWM: 161, 62
+
+PWM: 162, 64
+
+PWM: 163, 65
+
+PWM: 164, 67
+
+PWM: 165, 69
+
+PWM: 166, 71
+
+PWM: 167, 73
+
+PWM: 168, 75
+
+PWM: 169, 77
+
+PWM: 170, 79
+
+PWM: 171, 81
+
+PWM: 172, 83
+
+PWM: 173, 85
+
+PWM: 174, 87
+
+PWM: 175, 89
+
+PWM: 176, 91
+
+PWM: 177, 93
+
+PWM: 178, 95
+
+PWM: 179, 97
+
+PWM: 180, 99
+
+PWM: 179, 107
+
+PWM: 178, 115
+
+PWM: 177, 122
+
+PWM: 176, 130
+
+PWM: 175, 137
+
+PWM: 174, 145
+
+PWM: 173, 152
+
+PWM: 172, 159
+
+PWM: 171, 167
+
+PWM: 170, 174
+
+PWM: 169, 181
+
+PWM: 168, 188
+
+PWM: 167, 196
+
+PWM: 166, 203
+
+PWM: 165, 210
+
+PWM: 164, 217
+
+PWM: 163, 224
+
+PWM: 162, 230
+
+PWM: 161, 237
+
+PWM: 160, 244
+
+PWM: 159, 251
+
+PWM: 158, 257
+
+PWM: 157, 264
+
+PWM: 156, 271
+
+PWM: 155, 277
+
+PWM: 154, 284
+
+PWM: 153, 290
+
+PWM: 152, 296
+
+PWM: 151, 303
+
+PWM: 150, 309
+
+PWM: 149, 315
+
+PWM: 148, 322
+
+PWM: 147, 328
+
+TICKS: 332
+
+
+
+PWM: 146, 334
+
+PWM: 145, 340
+
+PWM: 144, 346
+
+PWM: 143, 352
+
+PWM: 142, 358
+
+PWM: 141, 364
+
+PWM: 140, 370
+
+PWM: 139, 376
+
+PWM: 138, 382
+
+PWM: 137, 388
+
+PWM: 136, 394
+
+PWM: 135, 399
+
+PWM: 134, 405
+
+PWM: 133, 411
+
+PWM: 132, 416
+
+PWM: 131, 422
+
+PWM: 130, 427
+
+PWM: 129, 433
+
+PWM: 128, 438
+
+PWM: 127, 443
+
+PWM: 126, 449
+
+PWM: 125, 454
+
+PWM: 124, 459
+
+PWM: 123, 464
+
+PWM: 122, 470
+
+PWM: 121, 474
+
+PWM: 120, 480
+
+PWM: 119, 485
+
+PWM: 118, 490
+
+PWM: 117, 495
+
+PWM: 116, 500
+
+PWM: 115, 504
+
+PWM: 114, 508
+
+PWM: 113, 512
+
+PWM: 112, 517
+
+PWM: 111, 521
+
+PWM: 110, 525
+
+PWM: 109, 529
+
+PWM: 108, 533
+
+PWM: 107, 537
+
+PWM: 106, 541
+
+PWM: 105, 545
+
+PWM: 104, 548
+
+PWM: 103, 552
+
+PWM: 102, 556
+
+PWM: 101, 560
+
+PWM: 100, 563
+
+PWM: 99, 567
+
+PWM: 98, 570
+
+PWM: 97, 574
+
+PWM: 96, 578
+
+PWM: 95, 581
+
+PWM: 94, 584
+
+PWM: 93, 588
+
+PWM: 92, 591
+
+PWM: 91, 595
+
+PWM: 90, 598
+
+PWM: 89, 601
+
+PWM: 88, 604
+
+PWM: 87, 607
+
+PWM: 86, 610
+
+PWM: 85, 613
+
+PWM: 84, 616
+
+PWM: 83, 619
+
+PWM: 82, 622
+
+Pressed!!!!PWM: 81, 625
+
+PWM: 80, 625
+
+PWM: 79, 625
+
+PWM: 78, 625
+
+PWM: 77, 625
+
+PWM: 76, 625
+
+PWM: 75, 625
+
+PWM: 74, 625
+
+PWM: 73, 625
+
+PWM: 72, 625
+
+PWM: 71, 625
+
+PWM: 70, 625
+
+PWM: 69, 625
+
+PWM: 68, 625
+
+TICKS: 625
+
+
+PWM: 67, 625
+
+PWM: 66, 625
+
+PWM: 65, 625
+
+PWM: 64, 625
+
+PWM: 63, 625
+
+PWM: 62, 625
+
+PWM: 61, 625
+
+PWM: 60, 625
+
+PWM: 59, 625
+
+PWM: 58, 625
+
+PWM: 57, 625
+
+PWM: 56, 625
+
+PWM: 55, 625
+
+PWM: 54, 625
+
+PWM: 53, 625
+
+PWM: 52, 625
+
+PWM: 51, 625
+
+PWM: 50, 625
+
+PWM: 49, 625
+
+PWM: 48, 625
+
+PWM: 47, 625
+
+PWM: 46, 625
+
+PWM: 45, 625
+
+PWM: 44, 625
+
+PWM: 43, 625
+
+PWM: 42, 625
+
+PWM: 41, 625
+
+PWM: 40, 625
+
+PWM: 39, 625
+
+PWM: 38, 625
+
+PWM: 37, 625
+
+PWM: 36, 625
+
+PWM: 35, 625
+
+PWM: 34, 625
+
+PWM: 33, 625
+
+PWM: 32, 625
+
+PWM: 31, 625
+
+PWM: 30, 625
+
+PWM: 29, 625
+
+PWM: 28, 625
+
+PWM: 27, 625
+
+PWM: 26, 625
+
+PWM: 25, 625
+
+PWM: 24, 625
+
+PWM: 23, 625
+
+PWM: 22, 625
+
+PWM: 21, 625
+
+PWM: 20, 625
+
+PWM: 19, 625
+
+PWM: 18, 625
+
+PWM: 17, 625
+
+PWM: 16, 625
+
+PWM: 15, 625
+
+PWM: 14, 625
+
+PWM: 13, 625
+
+PWM: 12, 625
+
+PWM: 11, 625
+
+PWM: 10, 625
+
+PWM: 9, 625
+
+PWM: 8, 625
+
+PWM: 7, 625
+
+PWM: 6, 625
+
+PWM: 5, 625
+
+PWM: 4, 625
+
+PWM: 3, 625
+
+PWM: 2, 625
+
+PWM: 1, 625
+
+TICKS: 625
+
+-50
+
+-50
+0TICKS: 587
+
+
+
+
+0
+-5TICKS: 538
+
+0
+
+
+-50
+TICKS: 445
+
+TICKS: 343
+
+TICKS: 241
+
+TICKS: 140
+
+-30
+
+
+-30
+TICKS: 66
+
+0TICKS: 22
+
+TICKS: -1
+
+TICKS: -1
+
+TICKS: -1
+
+Payload ParkedPayload ParkedPayload ParkedPayload ParkedPayload ParkedPayload ParkedPayload ParkedPayload ParkedPayload ParkedPayload ParkedPayload ParkedTICKS: -2
+
+TICKS: -2
+
+TICKS: -2
+
+TICKS: -2
+
+TICKS: -2
+
+TICKS: -2
+
+TICKS: -2
+
+TICKS: -2
+
+TICKS: -2
+
+TICKS: -2
+
+TICKS: -2
+
+TICKS: -2
+
+TICKS: -2
+
+TICKS: -2
+
+TICKS: -2
+
+TICKS: -2
+
+TICKS: -2
+
+TICKS: -2
+
+TICKS: -2
+
+TICKS: -2
+
+Payload ParkedPayload ParkedPayload ParkedPayload ParkedPayload ParkedPayload ParkedPayload ParkedPayload ParkedPayload ParkedPayload ParkedPayload ParkedTICKS: -2
+
+Payload ParkedTICKS: -2
+
+TICKS: -2
+
+TICKS: -2
+
+

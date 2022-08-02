@@ -26,52 +26,6 @@
 #include "main.h"
 #include "stdbool.h"
 
-#define MAX_DUTYCYCLE 			255   //16bit timer
-
-#define PWM_START 				121
-#define INTERMITENT_DC			180
-
-
-//For Winch Up start
-#define PWM_UP_START			30
-
-#define STEP 					1    // Mapping it with the 8bit 255 gives each step 257 ie. 65535/255 = 257
-
-#define PWM_FIXED				120
-#define PWM_FIXED_START			PWM_FIXED
-
-
-#define PWM_RAMP_UP_DURATION   35
-#define PWM_INTERMITANT_UP     20   //90 //90
-
-
-
-#define PWM_RAMP_DOWN_DURATION  85//For heavier payload  lighter payload ->75
-
-#define PWM_WINCH_DOWN_RAMP_DOWN_DURATION	30
-
-#define PWM_CONSTANT 			30
-
-
-#define ENCODER_RAMP_UP_COUNT 		PWM_RAMP_UP_DURATION * 205
-#define ENCODER_RAMP_DOWN_COUNT 	(ENCODER_RAMP_UP_COUNT + PWM_RAMP_DOWN_DURATION * 255)
-
-#define PWM_ON_DELAY(X)		((X)*0.011776)
-
-#define GP_DIV				2
-
-uint16_t gp_i = 64;
-
-
-#define DELAY_255			3000
-#define PWM_255				255
-
-
-//This part is for BOMBAY_DOORS
-#define BOMBAY_OPEN_CLOSE			255
-#define BOMBAY_DOOR_ONOFF_TIME		1500
-
-
 //Prototypes
 void SystemClockConfig(uint8_t clock_freq);
 void Error_handler(void);
@@ -147,10 +101,12 @@ uint32_t Clicks = 0;
 int16_t click = 0;
 int16_t Pulse = 0;
 
+//Variable for the GP sequence
+uint16_t gp_i = 64;
 
-//Variable to store the Counts
+//Variable to store the Counts and Length after softlanding
 uint32_t Counts = 0;
-
+uint32_t Length = 0;
 
 //Bool flag for the bombay door close
 bool bay_door_close = false;
@@ -413,6 +369,8 @@ void MX_WINCH_DOWN_MOTO_RAMP_UP_DOWN(void)
 
 
  	Counts = Pulse;
+
+ 	Length = (2 * __PI * 3.14 * Counts) * 0.1428;
 
 
 }
