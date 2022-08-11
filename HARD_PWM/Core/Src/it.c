@@ -9,6 +9,7 @@
 extern TIM_HandleTypeDef tim2;
 extern TIM_HandleTypeDef tim3;
 extern TIM_HandleTypeDef tim6;
+extern TIM_HandleTypeDef tim4;
 
 extern GPIO_InitTypeDef tim3ch1gpio;
 
@@ -28,6 +29,11 @@ extern uint32_t count1;
 extern bool recepCmplt1;
 extern uint32_t Data1;
 
+
+//Encdoer Vars
+extern uint32_t Clicks;
+extern int16_t click;
+extern int16_t Pulse;
 
 extern bool bay_door_close;
 
@@ -51,12 +57,24 @@ void SysTick_Handler(void)
 
 void TIM2_IRQHandler(void)
 {
+
+	//tim2.Instance->CNT
+	Clicks = __HAL_TIM_GET_COUNTER(&tim2);
+	click = (int16_t)Clicks;
+	Pulse = click * 0.25;
+
 	HAL_TIM_IRQHandler(&tim2);
+}
+
+void TIM4_IRQHandler(void)
+{
+  HAL_TIM_IRQHandler(&tim4);
 }
 
 
 
 
+//UART Interrupt
 
 void USART2_IRQHandler(void)
 {

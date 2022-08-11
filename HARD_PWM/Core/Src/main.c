@@ -26,6 +26,30 @@
 #include "main.h"
 #include "stdbool.h"
 
+
+//////////////////////////////
+//For PixHawk Interfacing
+#define THROTTLE_FULL		2000
+#define THROTTLE_HALF		1500
+#define THROTTLE_NULL		1000
+
+#define TIMCLOCK   90000000
+#define PRESCALAR  90
+
+
+uint32_t IC_Val1 = 0;
+uint32_t IC_Val2 = 0;
+uint32_t Difference = 0;
+int Is_First_Captured = 0;
+
+uint32_t usWidth = 0;
+
+/* Measure Frequency */
+float frequency = 0;
+
+////////////////////////////
+
+
 //Prototypes
 void SystemClockConfig(uint8_t clock_freq);
 void Error_handler(void);
@@ -33,6 +57,7 @@ void UART2_Init(void);
 void UART1_Init(void);
 void Timer3_Init(void);
 void Timer2_Init(void);
+void Timer4_Init(void);
 void LSE_Config(void);
 void GPIO_Init(void);
 
@@ -48,6 +73,7 @@ void MX_Jump();
 // Handle variable of general purpose timer 2 made global
 TIM_HandleTypeDef tim3;
 TIM_HandleTypeDef tim2;
+TIM_HandleTypeDef tim4;
 TIM_OC_InitTypeDef timerPWMconfig;
 
 
@@ -108,6 +134,9 @@ uint16_t gp_i = 64;
 uint32_t Counts = 0;
 uint32_t Length = 0;
 
+//Bool flag for the Winch Start Seq
+bool Start_Flag = false;
+
 //Bool flag for the bombay door close
 bool bay_door_close = false;
 
@@ -125,6 +154,7 @@ void Universal_Inits() {
 	LSE_Config();
 	Timer3_Init();
 	Timer2_Init();
+	Timer4_Init();
 	UART2_Init();
 	UART1_Init();
 	GPIO_Init();
@@ -154,6 +184,9 @@ int main()
 	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, GPIO_PIN_RESET);
 
 
+
+	__HAL_TIM_SET_COMPARE(&tim3, TIM_CHANNEL_1, tim3.Init.Period * 50/100);
+
 	///////////////////////////////////////////////////////////
 
 	/*
@@ -167,12 +200,12 @@ int main()
 	 * Spring triggering is the end of Winch Down Sequence.
 	 */
 
-	MX_BomBay_Door_Open();
+	//MX_BomBay_Door_Open();
 
 	HAL_Delay(1000); //Delay for the door to settle and prep for winch down.
 
-	MX_WINCH_DOWN_GP_RAMP_UP();
-	MX_WINCH_DOWN_MOTO_RAMP_UP_DOWN();
+	//MX_WINCH_DOWN_GP_RAMP_UP();
+	//MX_WINCH_DOWN_MOTO_RAMP_UP_DOWN();
 
 
 	if(spring_trig)
@@ -194,9 +227,9 @@ int main()
 	 *
 	 */
 	//This is the wait period for the winch up sequence.
-	HAL_Delay(5000);
+	//HAL_Delay(5000);
 
-	MX_WINCH_UP_MOTO_RAMP_UP_DOWN();
+	//MX_WINCH_UP_MOTO_RAMP_UP_DOWN();
 
 
 	//Until the flag for door open is not set do nothing
@@ -204,11 +237,72 @@ int main()
 
 	//If it breaks the loop, it means hook has reached the bay roof
 	//Start the Door Close sequence
-	MX_BomBay_Door_Close();
+	//MX_BomBay_Door_Close();
 
 
 	while(1){};
 
+}
+
+/*
+ * This sub routine does the input signal matching via the IC compare interrupt
+ * Based on the pre-defined signal type, routine scans for the particular DC signal
+ * If obtained initiates the Winch Start Sequence.
+ */
+
+void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
+{
+	if (htim->Channel == HAL_TIM_ACTIVE_CHANNEL_1)
+	{
+		if (Is_First_Captured==0) // if the first rising edge is not captured
+		{
+			IC_Val1 = HAL_TIM_ReadCapturedValue(htim, TIM_CHANNEL_1); // read the first value
+			Is_First_Captured = 1;  // set the first captured as true
+		}
+
+		else   // If the first rising edge is captured, now we will capture the second edge
+		{
+			IC_Val2 = HAL_TIM_ReadCapturedValue(htim, TIM_CHANNEL_1);  // read second value
+
+			if (IC_Val2 > IC_Val1)
+			{
+				Difference = IC_Val2-IC_Val1;
+			}
+
+			else if (IC_Val1 > IC_Val2)
+			{
+				Difference = (0xffff - IC_Val1) + IC_Val2;
+			}
+
+			float refClock = TIMCLOCK/(PRESCALAR);
+
+			frequency = refClock/Difference;
+
+			float mFactor = 1000000/refClock;
+
+			usWidth = Difference*mFactor;
+
+			//Here the conditions begin, for now we can keep it simple
+			if(usWidth >= THROTTLE_FULL)
+			{
+				//Do Something
+				Start_Flag = true;
+
+			}
+
+			else if(usWidth >= THROTTLE_HALF && usWidth < THROTTLE_FULL)
+			{
+				//Do Something different
+			}
+
+			else if(usWidth < THROTTLE_HALF)
+			{
+				//Do something else
+			}
+			__HAL_TIM_SET_COUNTER(htim, 0);  // reset the counter
+			Is_First_Captured = 0; // set it back to false
+		}
+	}
 }
 
 
@@ -287,7 +381,7 @@ void MX_BomBay_Door_Close()
 		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, GPIO_PIN_SET);
 		__HAL_TIM_SET_COMPARE(&tim3, TIM_CHANNEL_2, tim3.Init.Period * _8_BIT_MAP(BOMBAY_OPEN_CLOSE)/100);
 
-		HAL_Delay(1600);
+		HAL_Delay(2200);
 		__HAL_TIM_SET_COMPARE(&tim3, TIM_CHANNEL_2, tim3.Init.Period * _8_BIT_MAP(0)/100);
 	}
 
@@ -316,6 +410,7 @@ void MX_BomBay_Door_Close()
 //		indx = 0;
 //	}
 //}
+
 
 void MX_WINCH_DOWN_GP_RAMP_UP(void)
 {
@@ -441,17 +536,6 @@ void MX_WINCH_UP_MOTO_RAMP_UP_DOWN(void)
 		sprintf((char*)buf, "About to reach the payload bay @ PWM: %d\r\n", PWM_CONSTANT);
 
 		HAL_UART_Transmit(&huart2, (uint8_t *)buf, sizeof(buf), HAL_MAX_DELAY);
-
-}
-
-
-
-
-void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
-{
-	Clicks = __HAL_TIM_GET_COUNTER(htim);
-	click = (int16_t)Clicks;
-	Pulse = click * 0.25;
 
 }
 
@@ -635,6 +719,41 @@ void Timer2_Init()
 
 }
 
+
+void Timer4_Init(void)
+{
+
+
+	TIM_MasterConfigTypeDef sMasterConfig = {0};
+	TIM_IC_InitTypeDef sConfigIC = {0};
+
+	tim4.Instance = TIM4;
+	tim4.Init.Prescaler = 50-1;
+	tim4.Init.CounterMode = TIM_COUNTERMODE_UP;
+	tim4.Init.Period = 65535;
+	tim4.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+	tim4.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+	if (HAL_TIM_IC_Init(&tim4) != HAL_OK)
+	{
+	Error_handler();
+	}
+
+	sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+	sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+	if (HAL_TIMEx_MasterConfigSynchronization(&tim4, &sMasterConfig) != HAL_OK)
+	{
+	Error_handler();
+	}
+	sConfigIC.ICPolarity = TIM_INPUTCHANNELPOLARITY_BOTHEDGE;
+	sConfigIC.ICSelection = TIM_ICSELECTION_DIRECTTI;
+	sConfigIC.ICPrescaler = TIM_ICPSC_DIV1;
+	sConfigIC.ICFilter = 0;
+	if (HAL_TIM_IC_ConfigChannel(&tim4, &sConfigIC, TIM_CHANNEL_1) != HAL_OK)
+	{
+	Error_handler();
+	}
+
+}
 
 void SystemClockConfig(uint8_t clock_freq)
 {

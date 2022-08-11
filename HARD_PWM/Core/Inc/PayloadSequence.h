@@ -1,36 +1,51 @@
 /*
- * main.h
+ * PayloadSequence.h
  *
- *  Created on: Jun 22, 2021
- *      Author: 91900
+ *  Created on: 08-Aug-2022
+ *      Author: LENOVO
  */
 
-#ifndef MAIN_H_
-#define MAIN_H_
+#ifndef INC_PAYLOADSEQUENCE_H_
+#define INC_PAYLOADSEQUENCE_H_
 
-#include "stm32f4xx_hal.h"
+#include "main.h"
 
-#include <stdbool.h>
-#include <string.h>
-#include <stdlib.h>
-#include <stdio.h>
+typedef struct
+{
+	//Gp Variables
+	uint16_t gp_i;
+	uint32_t tau;		//Threshold
 
-#define SYS_CLOCK_FREQ_50MHz  			50
-#define SYS_CLOCK_FREQ_80MHz 			80
-#define SYS_CLOCK_FREQ_120MHz			120
-#define SYS_CLOCK_FREQ_180MHz			180
+	//Encoder Vars
+	uint32_t Counts;
+	uint32_t Length;
+
+	bool forward;
+	bool backward;
 
 
-#define DutyCycle(X)      ((X)*0.033 + 33)
-#define DutyCycleServo(X) ((X)*0.3611111111 + 15)
+}PayloadSequence_Handle_t;
 
+
+////////////////////////////////////////////////////WinchAPIs////////////////////////////
+
+void Winch_Down_Ramp_Up_Down();
+void Winch_Down_Gp_Sequnece();
+void Winch_Up_Ramp_Up_Down();
+void Bombay_Door_Open();
+void Bombay_Door_Close();
+void Winch_Motor_Direction_Set();
+void Bombay_Door_Direction_Set();
+bool Bay_Door_Close_Or_Not();
+
+
+///////////////////////////////////////////////WINCHMACROS/////////////////////////////
+
+//Winch Motor Mapping to the DutyCycle
 #define _8_BIT_MAP(X)         ((X)*0.3921568627)
 
 #define __PI				3.14159265
 
-
-
-//////////////////////////WINCH MACROS////////////////////////////////////
 
 #define MAX_DUTYCYCLE 			255   //16bit timer
 
@@ -58,12 +73,14 @@
 
 #define PWM_CONSTANT 			30
 
-
+//Encoder Display Time
 #define ENCODER_RAMP_UP_COUNT 		PWM_RAMP_UP_DURATION * 205
 #define ENCODER_RAMP_DOWN_COUNT 	(ENCODER_RAMP_UP_COUNT + PWM_RAMP_DOWN_DURATION * 255)
 
 #define PWM_ON_DELAY(X)		((X)*0.011776)
 
+
+//GP Sequence
 #define GP_DIV				2
 
 
@@ -83,4 +100,4 @@
 #define PAYLOAD_2		20
 #define PAYLOAD_3		30
 
-#endif /* MAIN_H_ */
+#endif /* INC_PAYLOADSEQUENCE_H_ */
