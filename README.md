@@ -108,3 +108,9 @@ PA3 --> UART Rx
 7. Limit Switch -> Spring Thing 
 8. Limit Switch -> Bombay Door
 9. Battery -> 12V Li-Ion
+
+# How To Open/Read the Source Code
+
+HARD_PWM -> Core -> Inc for the inlucde files
+
+HARD_PWM -> Core -> Src for the .c files
