@@ -60,7 +60,7 @@ Future:
 
 
 
-## PORT MAPPING
+## STM32F446 PORT MAPPING
 
 PC0 --> Winch MotorDirection Pin
 
@@ -95,5 +95,16 @@ Misc:
 During testing communication on com port
 
 PA2 --> UART Tx 
+
 PA3 --> UART Rx
 
+# Hardware Used 
+1. STM32F446 Microcontroller -> Winch Controller
+2. 2 Channel Cytron -> Motor Driver  
+3. 12V DC Motor -> Winch Motor
+4. 12V DC Motor -> Bombay Door Motor 
+5. ACS712 Sensor -> Current Sensor 
+6. Hall Effect Encoder -> Encoder 
+7. Limit Switch -> Spring Thing 
+8. Limit Switch -> Bombay Door
+9. Battery -> 12V Li-Ion
