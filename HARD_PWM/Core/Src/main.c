@@ -12,20 +12,15 @@
  * 1. DeBouncing Effect with the interrupt mode, possibly using the TimePeriodElaspsed Callback
  * in order to dampen out the effect.
  *
- * 2. Figure out why is the close door false triggering.
+ * 2. Figure out why is the close door false triggering. (Kind of solved.)
  *
  * 3. It  would be nice for it to winch up just after the spring gets triggered to avoid slack
  */
 
-
-
-
-
-
 //Includes
 #include "main.h"
 #include "stdbool.h"
-
+#include "ACS712.h"
 
 //////////////////////////////
 //For PixHawk Interfacing
@@ -60,7 +55,9 @@ void Timer2_Init(void);
 void Timer4_Init(void);
 void LSE_Config(void);
 void GPIO_Init(void);
-
+static void MX_DMA_Init(void);
+static void MX_ADC1_Init(void);
+static void MX_WINCH_START_SEQ(void);
 void MX_WINCH_DOWN_MOTO_RAMP_UP_DOWN(void);
 void MX_WINCH_UP_MOTO_RAMP_UP_DOWN(void);
 void MX_WINCH_DOWN_GP_RAMP_UP(void);
@@ -86,7 +83,11 @@ GPIO_InitTypeDef mdoor_dir;
 GPIO_InitTypeDef b_door;
 GPIO_InitTypeDef b_roof;
 
+//ADC and DMA Handles
+ADC_HandleTypeDef hadc1;
+DMA_HandleTypeDef hdma_adc1;
 
+ACS712_Handle_t hcurr;
 
 UART_HandleTypeDef huart2;
 UART_HandleTypeDef huart1;
@@ -147,17 +148,28 @@ bool poop_back = false;
 //Variable for the PWM Enable protection
 bool spring_trig = false;
 
+
+//Current Sensor
+uint32_t Buf;
+uint32_t adc_val;
+
+float rawVoltage;
+float current;
+
 void Universal_Inits() {
 
 	HAL_Init();
 	SystemClockConfig(SYS_CLOCK_FREQ_50MHz);
 	LSE_Config();
+	MX_DMA_Init();
+	MX_ADC1_Init();
 	Timer3_Init();
 	Timer2_Init();
 	Timer4_Init();
 	UART2_Init();
 	UART1_Init();
 	GPIO_Init();
+
 }
 
 
@@ -179,15 +191,27 @@ int main()
 	if (HAL_TIM_PWM_Start(&tim3, TIM_CHANNEL_1) != HAL_OK) Error_handler();
 	if (HAL_TIM_PWM_Start(&tim3, TIM_CHANNEL_2) != HAL_OK) Error_handler();
 
+	if(HAL_TIM_IC_Start_IT(&tim4, TIM_CHANNEL_1)!= HAL_OK) Error_handler();
+
+	HAL_ADC_Start_DMA(&hadc1, &Buf, 1);
 
 	HAL_GPIO_WritePin(GPIOC, GPIO_PIN_0, GPIO_PIN_RESET);
 	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, GPIO_PIN_RESET);
 
 
 
-	__HAL_TIM_SET_COMPARE(&tim3, TIM_CHANNEL_1, tim3.Init.Period * 50/100);
+	//__HAL_TIM_SET_COMPARE(&tim3, TIM_CHANNEL_1, tim3.Init.Period * 50/100);
 
 	///////////////////////////////////////////////////////////
+
+
+	/*
+	 * Winch Start Sequence
+	 * 1. One reception of a signal of particular width start the winch sequence
+	 * or else keep looping until forever.
+	 */
+	MX_WINCH_START_SEQ();
+
 
 	/*
 	 * Winch Down With Payload Sequence
@@ -200,12 +224,12 @@ int main()
 	 * Spring triggering is the end of Winch Down Sequence.
 	 */
 
-	//MX_BomBay_Door_Open();
+	MX_BomBay_Door_Open();
 
 	HAL_Delay(1000); //Delay for the door to settle and prep for winch down.
 
-	//MX_WINCH_DOWN_GP_RAMP_UP();
-	//MX_WINCH_DOWN_MOTO_RAMP_UP_DOWN();
+	MX_WINCH_DOWN_GP_RAMP_UP();
+	MX_WINCH_DOWN_MOTO_RAMP_UP_DOWN();
 
 
 	if(spring_trig)
@@ -227,9 +251,9 @@ int main()
 	 *
 	 */
 	//This is the wait period for the winch up sequence.
-	//HAL_Delay(5000);
+	HAL_Delay(5000);
 
-	//MX_WINCH_UP_MOTO_RAMP_UP_DOWN();
+	MX_WINCH_UP_MOTO_RAMP_UP_DOWN();
 
 
 	//Until the flag for door open is not set do nothing
@@ -237,12 +261,23 @@ int main()
 
 	//If it breaks the loop, it means hook has reached the bay roof
 	//Start the Door Close sequence
-	//MX_BomBay_Door_Close();
+	MX_BomBay_Door_Close();
 
 
-	while(1){};
+	while(1)
+	{};
 
 }
+
+/*
+ *  Current Sensor DMA Callback
+ */
+
+//void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
+//{
+//	hcurr.rawAdc = Buf;
+//	current = ((float) Buf * (VREF_3v3 / ADC_SCALE_12) - 2.5) * 10;
+//}
 
 /*
  * This sub routine does the input signal matching via the IC compare interrupt
@@ -287,6 +322,9 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
 			{
 				//Do Something
 				Start_Flag = true;
+
+				//DeInit the IC interrupt
+				HAL_TIM_IC_MspDeInit(&tim4);
 
 			}
 
@@ -350,6 +388,16 @@ void HAL_SYSTICK_Callback()
 }
 
 
+
+static void MX_WINCH_START_SEQ()
+{
+	/*
+	 * This part loops until a signal of particular pulse width is captured.
+	 */
+	while(!(Start_Flag));
+
+}
+
 void MX_BomBay_Door_Open(void)
 {
 
@@ -406,7 +454,7 @@ void MX_BomBay_Door_Close()
 //	{
 //		sprintf((char*)buf, "Counts: %d\r\n", Pulse);
 //
-////		HAL_UART_Transmit(&huart2, (uint8_t *)buf, sizeof(buf), HAL_MAX_DELAY);
+//		HAL_UART_Transmit(&huart2, (uint8_t *)buf, sizeof(buf), HAL_MAX_DELAY);
 //		indx = 0;
 //	}
 //}
@@ -422,7 +470,7 @@ void MX_WINCH_DOWN_GP_RAMP_UP(void)
 
 		HAL_Delay(PWM_ON_DELAY(PWM_FIXED));
 
-		sprintf((char*)buf, "Period: %d, %d\r\n", gp_i, Pulse);
+		sprintf((char*)buf, "Period: %d, %d, %f\r\n", gp_i, Pulse, ((float) Buf * (VREF_3v3 / ADC_SCALE_12) - 2.5) * 10);
 
 		HAL_UART_Transmit(&huart2, (uint8_t *)buf, sizeof(buf), HAL_MAX_DELAY);
 
@@ -440,7 +488,7 @@ void MX_WINCH_DOWN_MOTO_RAMP_UP_DOWN(void)
 	for(i = PWM_START; i< INTERMITENT_DC; i ++ )
 	{
 		__HAL_TIM_SET_COMPARE(&tim3, TIM_CHANNEL_1, tim3.Init.Period * _8_BIT_MAP(i)/100);
-		sprintf((char*)buf, "PWM: %d, %d\r\n", i, Pulse);
+		sprintf((char*)buf, "PWM: %d, %d, %f\r\n", i, Pulse, ((float) Buf * (VREF_3v3 / ADC_SCALE_12) - 2.5) * 10);
 
 		HAL_UART_Transmit(&huart2, (uint8_t *)buf, sizeof(buf), HAL_MAX_DELAY);
 
@@ -455,7 +503,7 @@ void MX_WINCH_DOWN_MOTO_RAMP_UP_DOWN(void)
 	for(i = INTERMITENT_DC; i> 0; i -- )
 		{
 			__HAL_TIM_SET_COMPARE(&tim3, TIM_CHANNEL_1, tim3.Init.Period * _8_BIT_MAP(i)/100);
-			sprintf((char*)buf, "PWM: %d, %d\r\n", i, Pulse);
+			sprintf((char*)buf, "PWM: %d, %d, %f\r\n", i, Pulse, ((float) Buf * (VREF_3v3 / ADC_SCALE_12) - 2.5) * 10);
 
 			HAL_UART_Transmit(&huart2, (uint8_t *)buf, sizeof(buf), HAL_MAX_DELAY);
 
@@ -486,7 +534,7 @@ void MX_WINCH_UP_MOTO_RAMP_UP_DOWN(void)
 		if(Pulse > loop_5)
 		{
 			__HAL_TIM_SET_COMPARE(&tim3, TIM_CHANNEL_1, tim3.Init.Period * _8_BIT_MAP(i)/100);
-			sprintf((char*)buf, "PWM: %d, %d\r\n", i, Pulse);
+			sprintf((char*)buf, "PWM: %d, %d, %f\r\n", i, Pulse, ((float) Buf * (VREF_3v3 / ADC_SCALE_12) - 2.5) * 10);
 
 			HAL_UART_Transmit(&huart2, (uint8_t *)buf, sizeof(buf), HAL_MAX_DELAY);
 
@@ -520,7 +568,7 @@ void MX_WINCH_UP_MOTO_RAMP_UP_DOWN(void)
 			{
 				//There is enough room to spool at the current rate do nothing different.
 				__HAL_TIM_SET_COMPARE(&tim3, TIM_CHANNEL_1, tim3.Init.Period * _8_BIT_MAP(i)/100);
-				sprintf((char*)buf, "PWM: %d, %d\r\n", i, Pulse);
+				sprintf((char*)buf, "PWM: %d, %d, %f\r\n", i, Pulse, ((float) Buf * (VREF_3v3 / ADC_SCALE_12) - 2.5) * 10);
 
 				HAL_UART_Transmit(&huart2, (uint8_t *)buf, sizeof(buf), HAL_MAX_DELAY);
 
@@ -754,6 +802,66 @@ void Timer4_Init(void)
 	}
 
 }
+
+/**
+  * @brief ADC1 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_ADC1_Init(void)
+{
+
+  ADC_ChannelConfTypeDef sConfig = {0};
+
+  /** Configure the global features of the ADC (Clock, Resolution, Data Alignment and number of conversion)
+  */
+  hadc1.Instance = ADC1;
+  hadc1.Init.ClockPrescaler = ADC_CLOCK_SYNC_PCLK_DIV4;
+  hadc1.Init.Resolution = ADC_RESOLUTION_12B;
+  hadc1.Init.ScanConvMode = DISABLE;
+  hadc1.Init.ContinuousConvMode = ENABLE;
+  hadc1.Init.DiscontinuousConvMode = DISABLE;
+  hadc1.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;
+  hadc1.Init.ExternalTrigConv = ADC_SOFTWARE_START;
+  hadc1.Init.DataAlign = ADC_DATAALIGN_RIGHT;
+  hadc1.Init.NbrOfConversion = 1;
+  hadc1.Init.DMAContinuousRequests = ENABLE;
+  hadc1.Init.EOCSelection = ADC_EOC_SINGLE_CONV;
+  if (HAL_ADC_Init(&hadc1) != HAL_OK)
+  {
+    Error_handler();
+  }
+
+  /** Configure for the selected ADC regular channel its corresponding rank in the sequencer and its sample time.
+  */
+  sConfig.Channel = ADC_CHANNEL_4;
+  sConfig.Rank = 1;
+  sConfig.SamplingTime = ADC_SAMPLETIME_3CYCLES;
+  if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
+  {
+    Error_handler();
+  }
+
+}
+
+
+/**
+  * Enable DMA controller clock
+  */
+static void MX_DMA_Init(void)
+{
+
+  /* DMA controller clock enable */
+  __HAL_RCC_DMA2_CLK_ENABLE();
+
+  /* DMA interrupt init */
+  /* DMA2_Stream0_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(DMA2_Stream0_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(DMA2_Stream0_IRQn);
+
+}
+
+
 
 void SystemClockConfig(uint8_t clock_freq)
 {

@@ -15,6 +15,8 @@ extern GPIO_InitTypeDef tim3ch1gpio;
 
 extern GPIO_InitTypeDef m_dir;
 
+extern DMA_HandleTypeDef hdma_adc1;
+
 extern UART_HandleTypeDef huart2;
 extern uint8_t receivedData;
 extern uint8_t data_buffer[5];
@@ -37,6 +39,7 @@ extern int16_t Pulse;
 
 extern bool bay_door_close;
 
+
 //Internal Variable
 char* data_btn = "Pressed!!!!";
 char* E_Stop = "Emergency Stop";
@@ -44,8 +47,9 @@ char* parked = "Payload Parked";
 
 extern bool poop_back;
 extern bool spring_trig;
-//Core Tick Interrupt
 
+
+//Core Tick Interrupt
 void SysTick_Handler(void)
 {
 	HAL_IncTick();
@@ -172,11 +176,23 @@ void EXTI1_IRQHandler()
 void EXTI2_IRQHandler()
 {
 	/*
+	 * This is for the Bay Door
+	 *
+	 * PC2
+	 */
+
+	HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_2);
+}
+
+void EXTI3_IRQHandler()
+{
+
+	/*
 	 * This is for the Bay Roof. After triggering...
 	 * 1.Turn off the winch motor --> Currently it does not solve the double triggering issue.
 	 * 2.Initiate the bay close door seq.
 	 *
-	 * PC2
+	 * PC3
 	 */
 
 	HAL_UART_Transmit(&huart2, (uint8_t *)parked, strlen(parked), HAL_MAX_DELAY);
@@ -197,16 +213,6 @@ void EXTI2_IRQHandler()
 
 	__HAL_TIM_SET_COMPARE(&tim3, TIM_CHANNEL_1, tim3.Init.Period * _8_BIT_MAP(0)/100);
 
-	HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_2);
-}
-
-void EXTI3_IRQHandler()
-{
-	/*
-	 * This is for the Bay Door
-	 *
-	 * PC3
-	 */
 
 	HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_3);
 }
@@ -226,3 +232,14 @@ void EXTI15_10_IRQHandler(void)
 
 	HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_13);
 }
+
+
+void DMA2_Stream0_IRQHandler(void)
+{
+
+  HAL_DMA_IRQHandler(&hdma_adc1);
+
+}
+
+
+
