@@ -54,3 +54,46 @@ Future:
 1. Improving the mechanical parts to incorperate complete PID/Any other control algorithm based Winch Control system.
 2. Serial Protocol based communication between PixHawk and the WinchController. (UAV-CAN for example.)
 3. Ability for the WinchController to decipher the MAVLINK Packets. 
+
+
+
+
+
+
+## PORT MAPPING
+
+PC0 --> Winch MotorDirection Pin
+
+PA6 --> Winch Motor PWM Pin
+
+Gnd --> Winch Gnd Pin
+
+
+PA8 --> Bombay Door Direction Pin
+
+PA7 --> Bombay Door PWM Pin
+
+Gnd --> Bombay Door Gnd Pin
+
+
+PC1 --> Spring Thing ext Int Pin
+
+PC2 --> Bay Roof ext Int Pin
+
+
+PA0 --> Encoder Tim2 Int Pin 1
+
+PA1 --> Encoder Tim2 Int Pin 2
+
+
+PA4 --> ADC DMA Pin for Current Sensor
+
+
+PB6 --> PixHawk Pin(Start Sequence)
+
+Misc:
+During testing communication on com port
+
+PA2 --> UART Tx 
+PA3 --> UART Rx
+
