@@ -14,13 +14,22 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <stdbool.h>
 
+//User Defined libraries
+#include "ACS712.h"
+
+
+
+//System Macros
 #define SYS_CLOCK_FREQ_50MHz  			50
 #define SYS_CLOCK_FREQ_80MHz 			80
 #define SYS_CLOCK_FREQ_120MHz			120
 #define SYS_CLOCK_FREQ_180MHz			180
 
 
+
+//MISC Macros
 #define DutyCycle(X)      ((X)*0.033 + 33)
 #define DutyCycleServo(X) ((X)*0.3611111111 + 15)
 
@@ -56,7 +65,7 @@
 
 #define PWM_WINCH_DOWN_RAMP_DOWN_DURATION	30
 
-#define PWM_CONSTANT 			30
+#define PWM_CONSTANT 			40
 
 
 #define ENCODER_RAMP_UP_COUNT 		PWM_RAMP_UP_DURATION * 205
@@ -74,7 +83,7 @@
 
 //This part is for BOMBAY_DOORS
 #define BOMBAY_OPEN_CLOSE			255
-#define BOMBAY_DOOR_ONOFF_TIME		1700
+#define BOMBAY_DOOR_ONOFF_TIME		1500
 
 
 //Payload Mass Macros for re-wind after roof touch

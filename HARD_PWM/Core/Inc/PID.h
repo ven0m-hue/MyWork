@@ -1,7 +1,7 @@
 /*
- * MPU9250.h
+ * PID.h
  *
- *  Created on: 5-Nov-2021
+ *  Created on: 7-Sept-2022
  *      Author: Venom
  */
 #ifndef INC_PID_H_
@@ -9,6 +9,14 @@
 
 #include "main.h"
 #include "math.h"
+#include "stdint.h"
+
+
+
+#define __8BIT_OUTPUT_MAX    180 
+#define __8BIT_OUTPUT_MIN    0
+
+#define __MAXMEASUREMENT    780 // Lets say for now 
 
 typedef struct 
 {
@@ -35,12 +43,17 @@ typedef struct
     /*Sample time */
     float Ts;
 
-    /*Limits, to clamp the windup error and the system saturation*/
+    /*Limits, to clamp the windup error and the system saturation
+    * Since the computations are mapped for 0-100% 
+    * Max possible limit must be within 0.0 and 1.0 
+    * Anything above this is not acceptable. 
+    */
     float limMin;
     float limMax;
 
     float limMinInt;
     float limMaxInt;
+
 
     /*And ofcourse, the output*/
     float pidout;
@@ -50,8 +63,11 @@ typedef struct
 //////////////////////////////////////////////////////API_CALLS///////////////////////////////////////
 /*Initializer*/
 uint8_t PID_Init(PID_Handle_t *pid);
+
+void SetSampleRate(PID_Handle_t *pid, float sampleTime);
+
 /*PID computation API*/
-float PID_Compute(PID_Handle_t *pid, float measurement, float setPoint);
+float PID_Compute(PID_Handle_t *pid, float measurement, float setPoint, float hal_tick);
 
 
 #endif //endo of file

@@ -19,8 +19,7 @@
 
 //Includes
 #include "main.h"
-#include "stdbool.h"
-#include "ACS712.h"
+
 
 //////////////////////////////
 //For PixHawk Interfacing
@@ -30,6 +29,10 @@
 
 #define TIMCLOCK   90000000
 #define PRESCALAR  90
+
+
+//voltate divider ratio
+#define VD_RATIO	1.51516
 
 
 uint32_t IC_Val1 = 0;
@@ -57,13 +60,17 @@ void LSE_Config(void);
 void GPIO_Init(void);
 static void MX_DMA_Init(void);
 static void MX_ADC1_Init(void);
-static void MX_WINCH_START_SEQ(void);
+void MX_WINCH_START_SEQ(void);
 void MX_WINCH_DOWN_MOTO_RAMP_UP_DOWN(void);
 void MX_WINCH_UP_MOTO_RAMP_UP_DOWN(void);
 void MX_WINCH_DOWN_GP_RAMP_UP(void);
 
+
+void MX_WINCH_UP_NO_PAYLOAD(void);
 void MX_BomBay_Door_Open(void);
 void MX_BomBay_Door_Close(void);
+
+void MX_SYS_Input(void);
 
 void MX_Jump();
 
@@ -99,6 +106,8 @@ UART_HandleTypeDef huart1;
 uint32_t clock_freq;  // for clock config
 uint32_t flash_latency;
 
+bool curr = false;
+
 //UART2
 uint8_t receivedData;
 uint8_t data_buffer[5];
@@ -112,16 +121,14 @@ uint32_t count1 = 0;
 bool recepCmplt1 = false;
 
 
-bool calib = false;
-uint32_t PID;
 uint16_t counter = 0;
 uint16_t i = 0;
-uint16_t j = 0;
 uint16_t indx = 0;
-bool btn_pressed = false;
+
 
 uint8_t buf[64];
-uint32_t tick = 1;
+uint8_t buf_tick[64];
+uint32_t tick = 0;
 
 uint32_t Data1 = 0;
 uint32_t Clicks = 0;
@@ -133,7 +140,7 @@ uint16_t gp_i = 64;
 
 //Variable to store the Counts and Length after softlanding
 uint32_t Counts = 0;
-uint32_t Length = 0;
+float Length = 0.0f;
 
 //Bool flag for the Winch Start Seq
 bool Start_Flag = false;
@@ -142,8 +149,10 @@ bool Start_Flag = false;
 bool bay_door_close = false;
 
 
-//Variable for bounce counts for spring thing
+//Variable for disable/enable the spring thing
 bool poop_back = false;
+//Variable for disable/enable the bay door close
+bool close_door = false;
 
 //Variable for the PWM Enable protection
 bool spring_trig = false;
@@ -152,6 +161,11 @@ bool spring_trig = false;
 //Current Sensor
 uint32_t Buf;
 uint32_t adc_val;
+
+
+int16_t OldPulse = 0;
+int16_t ClicksPsec = 0;
+float RPM__ = 0;
 
 float rawVoltage;
 float current;
@@ -180,7 +194,7 @@ int main()
 	Universal_Inits();
 
 	memset(buf, 0, sizeof(buf));
-
+	memset(buf_tick, 0, sizeof(buf_tick));
 	//Transmit to the terminal at start
 	char* user_data = "REDWING LABS\r\n";
 	uint16_t data_len = strlen(user_data);
@@ -195,19 +209,15 @@ int main()
 
 	HAL_ADC_Start_DMA(&hadc1, &Buf, 1);
 
-	HAL_GPIO_WritePin(GPIOC, GPIO_PIN_0, GPIO_PIN_RESET);
-	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, GPIO_PIN_RESET);
 
-
-
-	//__HAL_TIM_SET_COMPARE(&tim3, TIM_CHANNEL_1, tim3.Init.Period * 50/100);
+	//__HAL_TIM_SET_COMPARE(&tim3, TIM_CHANNEL_1, tim3.Init.Period * 70/100);
 
 	///////////////////////////////////////////////////////////
 
 
 	/*
 	 * Winch Start Sequence
-	 * 1. One reception of a signal of particular width start the winch sequence
+	 * 1. Upon reception of a signal of particular Pulse width start the winch sequence
 	 * or else keep looping until forever.
 	 */
 	MX_WINCH_START_SEQ();
@@ -224,9 +234,9 @@ int main()
 	 * Spring triggering is the end of Winch Down Sequence.
 	 */
 
-	MX_BomBay_Door_Open();
+ 	MX_BomBay_Door_Open();
 
-	HAL_Delay(1000); //Delay for the door to settle and prep for winch down.
+	//HAL_Delay(1000); //Delay for the door to settle and prep for winch down.
 
 	MX_WINCH_DOWN_GP_RAMP_UP();
 	MX_WINCH_DOWN_MOTO_RAMP_UP_DOWN();
@@ -247,27 +257,53 @@ int main()
 	 * 4. Once the roof switch triggers, initiate the Mission End Sequence.
 	 * 5. Mission End Sequence: Cut down the motor supply, close the door.
 	 *
-	 * note TODO: current sensor interfacing.
+	 * note TODO: current sensor for detecting if payload is landed.
 	 *
 	 */
 	//This is the wait period for the winch up sequence.
-	HAL_Delay(5000);
+	//HAL_Delay(5000);
+
 
 	MX_WINCH_UP_MOTO_RAMP_UP_DOWN();
 
-
 	//Until the flag for door open is not set do nothing
-	while(!(bay_door_close));
-
 	//If it breaks the loop, it means hook has reached the bay roof
-	//Start the Door Close sequence
+	////Start the Door Close sequence
 	MX_BomBay_Door_Close();
-
 
 	while(1)
 	{};
 
 }
+
+
+void MX_SYS_Input(void)
+{
+	/*
+	 * Goal is to desgin non-linear input to get a good system response
+	 */
+	uint32_t stp = 0;
+
+	for(stp = 0; stp < 100; stp++)
+	{
+		__HAL_TIM_SET_COMPARE(&tim3, TIM_CHANNEL_1, tim3.Init.Period * _8_BIT_MAP(stp)/100);
+		HAL_Delay(50);
+	}
+
+	HAL_Delay(2000);
+
+	for(; stp < 200; stp++)
+	{
+		__HAL_TIM_SET_COMPARE(&tim3, TIM_CHANNEL_1, tim3.Init.Period * _8_BIT_MAP(stp)/100);
+		HAL_Delay(50);
+	}
+
+	HAL_Delay(1000);
+
+}
+
+
+
 
 /*
  *  Current Sensor DMA Callback
@@ -275,8 +311,24 @@ int main()
 
 //void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
 //{
-//	hcurr.rawAdc = Buf;
 //	current = ((float) Buf * (VREF_3v3 / ADC_SCALE_12) - 2.5) * 10;
+//
+//
+//
+//	//sprintf((char*)buf, "@Current: %f\r\n", current);
+//	//HAL_UART_Transmit(&huart2, (uint8_t *)buf, sizeof(buf), HAL_MAX_DELAY);
+//
+//	if(curr)
+//	{
+//		current = ((float) Buf * (VREF_3v3 / ADC_SCALE_12) - 2.5) * 10;
+//		if((current < 1.0f)  &&  (current > -1.0f))
+//		{
+//			__HAL_TIM_SET_COMPARE(&tim3, TIM_CHANNEL_1, tim3.Init.Period * _8_BIT_MAP(0)/100);
+//			sprintf((char*)buf, "Payload Soft landed:@Current: %f\r\n", current);
+//			HAL_UART_Transmit(&huart2, (uint8_t *)buf, sizeof(buf), HAL_MAX_DELAY);
+//		}
+//	}
+//
 //}
 
 /*
@@ -287,7 +339,7 @@ int main()
 
 void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
 {
-	if (htim->Channel == HAL_TIM_ACTIVE_CHANNEL_1)
+	if (htim->Instance == TIM4)
 	{
 		if (Is_First_Captured==0) // if the first rising edge is not captured
 		{
@@ -318,6 +370,7 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
 			usWidth = Difference*mFactor;
 
 			//Here the conditions begin, for now we can keep it simple
+			//THROTTLE_FULL = 2000us
 			if(usWidth >= THROTTLE_FULL)
 			{
 				//Do Something
@@ -358,44 +411,73 @@ void HAL_SYSTICK_Callback()
 	indx++;  //Monitors the time
 	++tick;  // Updates the tick
 
+//
+//	if(indx == ENCODER_RAMP_UP_COUNT)
+//	{
+//
+//		sprintf((char*)buf_tick, "TICKS | Current: %d, %f\r\n", Pulse, ((float) Buf * (VREF_3v3 / ADC_SCALE_12) - 2.5) * 10);
+//
+//		HAL_UART_Transmit(&huart2, (uint8_t *)buf, sizeof(buf), HAL_MAX_DELAY);
+//
+//
+//		indx = 0;
+//	}
+//
+//	else if(indx == ENCODER_RAMP_DOWN_COUNT)
+//	{
+//		sprintf((char*)buf_tick, "TICKS | Current: %d, %f\r\n", Pulse, ((float) Buf * (VREF_3v3 / ADC_SCALE_12) - 2.5) * 10);
+//
+//		HAL_UART_Transmit(&huart2, (uint8_t *)buf_tick, sizeof(buf), HAL_MAX_DELAY);
+//
+//		indx = 0;
+//	}
+//
+//	else
+//	{}
 
-	if(indx == ENCODER_RAMP_UP_COUNT)
+	if(tick == 1000) //every 100 millisecond
 	{
-		sprintf((char*)buf, "TICKS: %d\r\n", Pulse);
+		float curr;
+		//calculate the current after every 100ms.
+		for(int j=0; j<100; j++)
+		{
+			curr += (((float) Buf * (VREF_3v3 / ADC_SCALE_12)) * VD_RATIO - 2.5) * 10;
+		}
 
-		HAL_UART_Transmit(&huart2, (uint8_t *)buf, sizeof(buf), HAL_MAX_DELAY);
+		current = curr * 0.01;
+		curr = 0;
+		tick = 0;
 
-		//Do the Flash Write Sequence here.
-		//Flash_Write_Data(0x08060000, (uint32_t*)Pulse, 1);
+	} else{}
 
+	if(indx == 1000)  // every second
+	{
+		//Calculate the rpm
+		ClicksPsec = (Pulse - OldPulse);  // Pulse or Clicks Per Second
+		OldPulse = Pulse;
 		indx = 0;
+
+		RPM__ = (float)((float)ClicksPsec / 7) * 60;
 	}
-
-	else if(indx == ENCODER_RAMP_DOWN_COUNT)
-	{
-		sprintf((char*)buf, "TICKS: %d\r\n", Pulse);
-
-		HAL_UART_Transmit(&huart2, (uint8_t *)buf, sizeof(buf), HAL_MAX_DELAY);
-
-				//Do the Flash Write Sequence here.
-				//Flash_Write_Data(0x08060000, (uint32_t*)Pulse, 1);
-
-				indx = 0;
-	}
-
-	else{}
 
 }
 
 
 
-static void MX_WINCH_START_SEQ()
+void MX_WINCH_START_SEQ()
 {
 	/*
 	 * This part loops until a signal of particular pulse width is captured.
 	 */
-	while(!(Start_Flag));
+	//UNUSED();
+	while(!(Start_Flag)){};
 
+}
+
+
+void MX_WINCH_UP_NO_PAYLOAD(void)
+{
+	__HAL_TIM_SET_COMPARE(&tim3, TIM_CHANNEL_2, tim3.Init.Period * _8_BIT_MAP(60)/100);
 }
 
 void MX_BomBay_Door_Open(void)
@@ -423,6 +505,8 @@ void MX_BomBay_Door_Open(void)
 
 void MX_BomBay_Door_Close()
 {
+	while(!(bay_door_close));
+
 	if(BOMBAY_OPEN_CLOSE > 0)
 	{
 		HAL_GPIO_WritePin(GPIOC, GPIO_PIN_0, GPIO_PIN_SET);
@@ -470,7 +554,8 @@ void MX_WINCH_DOWN_GP_RAMP_UP(void)
 
 		HAL_Delay(PWM_ON_DELAY(PWM_FIXED));
 
-		sprintf((char*)buf, "Period: %d, %d, %f\r\n", gp_i, Pulse, ((float) Buf * (VREF_3v3 / ADC_SCALE_12) - 2.5) * 10);
+		//sprintf((char*)buf, "Period: %d, %d, %f\r\n", gp_i, Pulse, ((float) Buf * (VREF_3v3 / ADC_SCALE_12) - 2.5) * 10);
+		sprintf((char*)buf, "PWM: %f, RPM: %f\r\n", i*0.3921, RPM__);
 
 		HAL_UART_Transmit(&huart2, (uint8_t *)buf, sizeof(buf), HAL_MAX_DELAY);
 
@@ -487,27 +572,49 @@ void MX_WINCH_DOWN_MOTO_RAMP_UP_DOWN(void)
 {
 	for(i = PWM_START; i< INTERMITENT_DC; i ++ )
 	{
+
 		__HAL_TIM_SET_COMPARE(&tim3, TIM_CHANNEL_1, tim3.Init.Period * _8_BIT_MAP(i)/100);
-		sprintf((char*)buf, "PWM: %d, %d, %f\r\n", i, Pulse, ((float) Buf * (VREF_3v3 / ADC_SCALE_12) - 2.5) * 10);
+		//current = ((float) Buf * (VREF_3v3 / ADC_SCALE_12) - 2.5) * 10;
+
+		//sprintf((char*)buf, "PWM: %d, %d, %f\r\n", i, Pulse, current);
+		sprintf((char*)buf, "PWM: %f, RPM: %f\r\n", i*0.019605, RPM__);
 
 		HAL_UART_Transmit(&huart2, (uint8_t *)buf, sizeof(buf), HAL_MAX_DELAY);
 
 		HAL_Delay(PWM_INTERMITANT_UP);    //This finishes the ramp up in
 	}
 
-	//Its only after this point the Spring thing needs to be activated
-	poop_back = true;
-
-
 
 	for(i = INTERMITENT_DC; i> 0; i -- )
 		{
+
+
 			__HAL_TIM_SET_COMPARE(&tim3, TIM_CHANNEL_1, tim3.Init.Period * _8_BIT_MAP(i)/100);
-			sprintf((char*)buf, "PWM: %d, %d, %f\r\n", i, Pulse, ((float) Buf * (VREF_3v3 / ADC_SCALE_12) - 2.5) * 10);
+			//current = ((float) Buf * (VREF_3v3 / ADC_SCALE_12) - 2.5) * 10;
+
+			//sprintf((char*)buf, "PWM: %d, %d, %f\r\n", i, Pulse, current);
+			sprintf((char*)buf, "PWM: %f, RPM: %f\r\n", i*0.019605, RPM__);
 
 			HAL_UART_Transmit(&huart2, (uint8_t *)buf, sizeof(buf), HAL_MAX_DELAY);
 
 			HAL_Delay(PWM_RAMP_DOWN_DURATION);    //This finishes the ramp up in
+
+
+			//Its only after this point the Spring thing and the Current thing needs to be activated
+			if(i <= 99 )
+			{
+				//Spring Thing
+				//poop_back = true;
+
+				//Current Thing
+				if((current < 1.0f)  &&  (current > -1.0f))
+				{
+					__HAL_TIM_SET_COMPARE(&tim3, TIM_CHANNEL_1, tim3.Init.Period * _8_BIT_MAP(0)/100);
+					sprintf((char*)buf, "Payload Soft landed:@Current: %f\r\n", current);
+					HAL_UART_Transmit(&huart2, (uint8_t *)buf, sizeof(buf), HAL_MAX_DELAY);
+				}
+			}
+
 		}
 
 
@@ -515,6 +622,10 @@ void MX_WINCH_DOWN_MOTO_RAMP_UP_DOWN(void)
 
  	Length = (2 * __PI * 3.14 * Counts) * 0.1428;
 
+ 	//sprintf((char*)buf, "PWM:%d,Pulse:%d,Current:%f,Length:%f,RPM:%f\r\n", i, Pulse, current, Length, RPM__);
+ 	HAL_UART_Transmit(&huart2, (uint8_t *)buf, sizeof(buf), HAL_MAX_DELAY);
+
+ 	memset(buf, 0, sizeof(buf));
 
 }
 
@@ -534,8 +645,9 @@ void MX_WINCH_UP_MOTO_RAMP_UP_DOWN(void)
 		if(Pulse > loop_5)
 		{
 			__HAL_TIM_SET_COMPARE(&tim3, TIM_CHANNEL_1, tim3.Init.Period * _8_BIT_MAP(i)/100);
-			sprintf((char*)buf, "PWM: %d, %d, %f\r\n", i, Pulse, ((float) Buf * (VREF_3v3 / ADC_SCALE_12) - 2.5) * 10);
-
+			//sprintf((char*)buf, "PWM: %d, %d, %f\r\n", i, Pulse, current);
+			//sprintf((char*)buf, "PWM: %d, RPM: %f, Current: %f\r\n", i, RPM__, current);
+			sprintf((char*)buf, "PWM: %f, RPM: %f\r\n", i*0.019605, RPM__);
 			HAL_UART_Transmit(&huart2, (uint8_t *)buf, sizeof(buf), HAL_MAX_DELAY);
 
 			HAL_Delay(PWM_INTERMITANT_UP);    //This finishes the ramp up in
@@ -568,7 +680,9 @@ void MX_WINCH_UP_MOTO_RAMP_UP_DOWN(void)
 			{
 				//There is enough room to spool at the current rate do nothing different.
 				__HAL_TIM_SET_COMPARE(&tim3, TIM_CHANNEL_1, tim3.Init.Period * _8_BIT_MAP(i)/100);
-				sprintf((char*)buf, "PWM: %d, %d, %f\r\n", i, Pulse, ((float) Buf * (VREF_3v3 / ADC_SCALE_12) - 2.5) * 10);
+				//sprintf((char*)buf, "PWM: %d, %d, %f\r\n", i, Pulse, current);
+				//sprintf((char*)buf, "PWM: %d, RPM: %f, Current: %f\r\n", i, RPM__, current);
+				sprintf((char*)buf, "PWM: %f, RPM: %f\r\n", i*0.019605, RPM__);
 
 				HAL_UART_Transmit(&huart2, (uint8_t *)buf, sizeof(buf), HAL_MAX_DELAY);
 
@@ -578,12 +692,17 @@ void MX_WINCH_UP_MOTO_RAMP_UP_DOWN(void)
 			else break;
 		}
 
-		//After breaking
-		//There is room to spool but not so much. Run at constant speed untill button gets triggered
-		__HAL_TIM_SET_COMPARE(&tim3, TIM_CHANNEL_1, tim3.Init.Period * _8_BIT_MAP(PWM_CONSTANT)/100);
-		sprintf((char*)buf, "About to reach the payload bay @ PWM: %d\r\n", PWM_CONSTANT);
 
-		HAL_UART_Transmit(&huart2, (uint8_t *)buf, sizeof(buf), HAL_MAX_DELAY);
+	//Its only after this point we need to activate the door close interrupt flag
+	close_door = true;
+
+
+	//After breaking
+	//There is room to spool but not so much. Run at constant speed untill button gets triggered
+	__HAL_TIM_SET_COMPARE(&tim3, TIM_CHANNEL_1, tim3.Init.Period * _8_BIT_MAP(PWM_CONSTANT)/100);
+	sprintf((char*)buf, "About to reach the payload bay @ PWM: %d\r\n", PWM_CONSTANT);
+
+	HAL_UART_Transmit(&huart2, (uint8_t *)buf, sizeof(buf), HAL_MAX_DELAY);
 
 }
 
@@ -816,7 +935,7 @@ static void MX_ADC1_Init(void)
   /** Configure the global features of the ADC (Clock, Resolution, Data Alignment and number of conversion)
   */
   hadc1.Instance = ADC1;
-  hadc1.Init.ClockPrescaler = ADC_CLOCK_SYNC_PCLK_DIV4;
+  hadc1.Init.ClockPrescaler = ADC_CLOCK_SYNC_PCLK_DIV2;
   hadc1.Init.Resolution = ADC_RESOLUTION_12B;
   hadc1.Init.ScanConvMode = DISABLE;
   hadc1.Init.ContinuousConvMode = ENABLE;
@@ -836,7 +955,7 @@ static void MX_ADC1_Init(void)
   */
   sConfig.Channel = ADC_CHANNEL_4;
   sConfig.Rank = 1;
-  sConfig.SamplingTime = ADC_SAMPLETIME_3CYCLES;
+  sConfig.SamplingTime = ADC_SAMPLETIME_480CYCLES;
   if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
   {
     Error_handler();
@@ -1072,13 +1191,14 @@ void UART1_Init(void)
 
 void Error_handler(void)
 {
-
+	__disable_irq();
 	while(1);
 }
 
-//For now do nothing
+//For now do nothingv
 void MX_Jump()
 {
+	__disable_irq();
 	while(1);
 }
 

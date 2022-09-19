@@ -11,9 +11,10 @@ extern TIM_HandleTypeDef tim3;
 extern TIM_HandleTypeDef tim6;
 extern TIM_HandleTypeDef tim4;
 
-extern GPIO_InitTypeDef tim3ch1gpio;
 
-extern GPIO_InitTypeDef m_dir;
+extern bool curr;
+extern bool Start_Flag;
+extern GPIO_InitTypeDef tim3ch1gpio;
 
 extern DMA_HandleTypeDef hdma_adc1;
 
@@ -47,11 +48,13 @@ char* parked = "Payload Parked";
 
 extern bool poop_back;
 extern bool spring_trig;
+extern bool close_door;
 
 
 //Core Tick Interrupt
 void SysTick_Handler(void)
 {
+
 	HAL_IncTick();
 	HAL_SYSTICK_IRQHandler();
 }
@@ -61,7 +64,6 @@ void SysTick_Handler(void)
 
 void TIM2_IRQHandler(void)
 {
-
 	//tim2.Instance->CNT
 	Clicks = __HAL_TIM_GET_COUNTER(&tim2);
 	click = (int16_t)Clicks;
@@ -128,6 +130,18 @@ void USART2_IRQHandler(void)
 		{
 
 			HAL_GPIO_Init(GPIOA, &tim3ch1gpio);
+			HAL_TIM_PWM_Start(&tim3, TIM_CHANNEL_1);
+		}
+
+		else if(receivedData == 'v')
+		{
+			curr = true;
+		}
+
+		else if(receivedData == 's')
+		{
+			curr = false;
+			Start_Flag = true;
 		}
 
 		else
@@ -138,6 +152,15 @@ void USART2_IRQHandler(void)
 	return;
 
 	HAL_UART_IRQHandler(&huart2);
+}
+
+
+
+void DMA2_Stream0_IRQHandler(void)
+{
+
+  HAL_DMA_IRQHandler(&hdma_adc1);
+
 }
 
 
@@ -158,7 +181,15 @@ void EXTI1_IRQHandler()
 	{
 		HAL_UART_Transmit(&huart2, (uint8_t *)data_btn, strlen(data_btn), HAL_MAX_DELAY);
 
-		__HAL_TIM_SET_COMPARE(&tim3, TIM_CHANNEL_1, tim3.Init.Period * 0/100);
+//		__HAL_TIM_SET_COMPARE(&tim3, TIM_CHANNEL_1, tim3.Init.Period * 0/100);
+//
+//		for(int i =0; i<10000; i++)
+//		{
+//
+//			__HAL_TIM_SET_COMPARE(&tim3, TIM_CHANNEL_1, tim3.Init.Period * _8_BIT_MAP(PAYLOAD_3)/100);
+//
+//		}
+
 
 		HAL_TIM_PWM_Stop(&tim3, TIM_CHANNEL_1);
 
@@ -195,23 +226,29 @@ void EXTI3_IRQHandler()
 	 * PC3
 	 */
 
-	HAL_UART_Transmit(&huart2, (uint8_t *)parked, strlen(parked), HAL_MAX_DELAY);
+	if(close_door)
+	{
+		HAL_UART_Transmit(&huart2, (uint8_t *)parked, strlen(parked), HAL_MAX_DELAY);
 
-	__HAL_TIM_SET_COMPARE(&tim3, TIM_CHANNEL_1, tim3.Init.Period * _8_BIT_MAP(0)/100);
-
-
-	//Flip the bay_door flag to initiate bayclose door seq
-	bay_door_close = true;
+		__HAL_TIM_SET_COMPARE(&tim3, TIM_CHANNEL_1, tim3.Init.Period * _8_BIT_MAP(0)/100);
 
 
-	HAL_GPIO_WritePin(GPIOC, GPIO_PIN_0, GPIO_PIN_RESET);
+		//Flip the bay_door flag to initiate bayclose door seq
+		bay_door_close = true;
 
-	for(int i =0; i<6000; i++){
 
-		__HAL_TIM_SET_COMPARE(&tim3, TIM_CHANNEL_1, tim3.Init.Period * _8_BIT_MAP(PAYLOAD_2)/100);
+		HAL_GPIO_WritePin(GPIOC, GPIO_PIN_0, GPIO_PIN_RESET);
+
+		/*
+		 * Does not work well with the 2 channel motor driver
+		 *
+			for(int i =0; i<6000; i++){
+
+				__HAL_TIM_SET_COMPARE(&tim3, TIM_CHANNEL_1, tim3.Init.Period * _8_BIT_MAP(PAYLOAD_2)/100);
+			}
+		*/
+			__HAL_TIM_SET_COMPARE(&tim3, TIM_CHANNEL_1, tim3.Init.Period * _8_BIT_MAP(0)/100);
 	}
-
-	__HAL_TIM_SET_COMPARE(&tim3, TIM_CHANNEL_1, tim3.Init.Period * _8_BIT_MAP(0)/100);
 
 
 	HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_3);
@@ -221,6 +258,7 @@ void EXTI15_10_IRQHandler(void)
 
 //PC13
 {
+
 	//HAL_Delay(10);
 	if(__HAL_GPIO_EXTI_GET_FLAG(GPIO_PIN_13)){
 		GPIOA -> ODR ^= GPIO_PIN_5; // toggle LD2 LED
@@ -232,14 +270,5 @@ void EXTI15_10_IRQHandler(void)
 
 	HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_13);
 }
-
-
-void DMA2_Stream0_IRQHandler(void)
-{
-
-  HAL_DMA_IRQHandler(&hdma_adc1);
-
-}
-
 
 
