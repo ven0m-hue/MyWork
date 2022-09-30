@@ -44,13 +44,15 @@ extern bool bay_door_close;
 //Internal Variable
 char* data_btn = "Pressed!!!!";
 char* E_Stop = "Emergency Stop";
+char e_buf[64];
 char* parked = "Payload Parked";
 
 extern bool poop_back;
 extern bool spring_trig;
 extern bool close_door;
 
-
+extern uint16_t indx;
+extern uint32_t tick;
 //Core Tick Interrupt
 void SysTick_Handler(void)
 {
@@ -118,8 +120,8 @@ void USART2_IRQHandler(void)
 
 		else if(receivedData == ' ')
 		{
-
-			HAL_UART_Transmit(&huart2, (uint8_t *)E_Stop, strlen(E_Stop), HAL_MAX_DELAY);  //send to terminal
+			sprintf((char*)e_buf, "Emergency Stop with Tick: %lu", tick);
+			HAL_UART_Transmit(&huart2, (uint8_t *)e_buf, strlen(E_Stop), HAL_MAX_DELAY);  //send to terminal
 			memset(data_buffer, 0, sizeof(data_buffer));
 			__HAL_TIM_SET_COMPARE(&tim3, TIM_CHANNEL_1, tim3.Init.Period * _8_BIT_MAP(0)/100);
 			//HAL_GPIO_DeInit(GPIOA, GPIO_PIN_6);
@@ -142,6 +144,7 @@ void USART2_IRQHandler(void)
 		{
 			curr = false;
 			Start_Flag = true;
+			indx = 0;
 		}
 
 		else
@@ -181,14 +184,14 @@ void EXTI1_IRQHandler()
 	{
 		HAL_UART_Transmit(&huart2, (uint8_t *)data_btn, strlen(data_btn), HAL_MAX_DELAY);
 
-//		__HAL_TIM_SET_COMPARE(&tim3, TIM_CHANNEL_1, tim3.Init.Period * 0/100);
-//
-//		for(int i =0; i<10000; i++)
-//		{
-//
-//			__HAL_TIM_SET_COMPARE(&tim3, TIM_CHANNEL_1, tim3.Init.Period * _8_BIT_MAP(PAYLOAD_3)/100);
-//
-//		}
+		__HAL_TIM_SET_COMPARE(&tim3, TIM_CHANNEL_1, tim3.Init.Period * 0/100);
+
+		for(int i =0; i<10000; i++)
+		{
+
+			__HAL_TIM_SET_COMPARE(&tim3, TIM_CHANNEL_1, tim3.Init.Period * _8_BIT_MAP(PAYLOAD_3)/100);
+
+		}
 
 
 		HAL_TIM_PWM_Stop(&tim3, TIM_CHANNEL_1);

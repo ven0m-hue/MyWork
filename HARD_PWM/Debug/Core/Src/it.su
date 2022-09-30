@@ -1,8 +1,9 @@
-../Core/Src/it.c:49:6:SysTick_Handler	8	static
-../Core/Src/it.c:58:6:TIM2_IRQHandler	8	static
-../Core/Src/it.c:69:6:TIM4_IRQHandler	8	static
-../Core/Src/it.c:79:6:USART2_IRQHandler	16	static
-../Core/Src/it.c:144:6:EXTI1_IRQHandler	16	static
-../Core/Src/it.c:172:6:EXTI2_IRQHandler	24	static
-../Core/Src/it.c:203:6:EXTI3_IRQHandler	8	static
-../Core/Src/it.c:214:6:EXTI15_10_IRQHandler	8	static
+../Core/Src/it.c:57:6:SysTick_Handler	8	static
+../Core/Src/it.c:67:6:TIM2_IRQHandler	8	static
+../Core/Src/it.c:77:6:TIM4_IRQHandler	8	static
+../Core/Src/it.c:87:6:USART2_IRQHandler	16	static
+../Core/Src/it.c:162:6:DMA2_Stream0_IRQHandler	8	static
+../Core/Src/it.c:174:6:EXTI1_IRQHandler	24	static
+../Core/Src/it.c:210:6:EXTI2_IRQHandler	8	static
+../Core/Src/it.c:221:6:EXTI3_IRQHandler	16	static
+../Core/Src/it.c:260:6:EXTI15_10_IRQHandler	8	static

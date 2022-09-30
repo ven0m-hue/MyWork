@@ -1,2 +1,3 @@
 ../Core/Src/PID.c:19:9:PID_Init	16	static
-../Core/Src/PID.c:37:7:PID_Compute	32	static
+../Core/Src/PID.c:39:7:PID_Compute	32	static
+../Core/Src/PID.c:106:6:SetSampleRate	24	static

@@ -234,7 +234,7 @@ int main()
 	 * Spring triggering is the end of Winch Down Sequence.
 	 */
 
- 	MX_BomBay_Door_Open();
+ 	//MX_BomBay_Door_Open();
 
 	//HAL_Delay(1000); //Delay for the door to settle and prep for winch down.
 
@@ -264,12 +264,12 @@ int main()
 	//HAL_Delay(5000);
 
 
-	MX_WINCH_UP_MOTO_RAMP_UP_DOWN();
+	//MX_WINCH_UP_MOTO_RAMP_UP_DOWN();
 
 	//Until the flag for door open is not set do nothing
 	//If it breaks the loop, it means hook has reached the bay roof
 	////Start the Door Close sequence
-	MX_BomBay_Door_Close();
+	//MX_BomBay_Door_Close();
 
 	while(1)
 	{};
@@ -370,20 +370,20 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
 			usWidth = Difference*mFactor;
 
 			//Here the conditions begin, for now we can keep it simple
-			//THROTTLE_FULL = 2000us
+			//THROTTLE_FULL ~= 2000us
 			if(usWidth >= THROTTLE_FULL)
 			{
 				//Do Something
 				Start_Flag = true;
 
 				//DeInit the IC interrupt
-				HAL_TIM_IC_MspDeInit(&tim4);
+				//HAL_TIM_IC_MspDeInit(&tim4);
 
 			}
 
 			else if(usWidth >= THROTTLE_HALF && usWidth < THROTTLE_FULL)
 			{
-				//Do Something different
+				//Do nothing
 			}
 
 			else if(usWidth < THROTTLE_HALF)
@@ -409,7 +409,7 @@ void HAL_SYSTICK_Callback()
 {
 
 	indx++;  //Monitors the time
-	++tick;  // Updates the tick
+
 
 //
 //	if(indx == ENCODER_RAMP_UP_COUNT)
@@ -435,24 +435,10 @@ void HAL_SYSTICK_Callback()
 //	else
 //	{}
 
-	if(tick == 1000) //every 100 millisecond
-	{
-		float curr;
-		//calculate the current after every 100ms.
-		for(int j=0; j<100; j++)
-		{
-			curr += (((float) Buf * (VREF_3v3 / ADC_SCALE_12)) * VD_RATIO - 2.5) * 10;
-		}
-
-		current = curr * 0.01;
-		curr = 0;
-		tick = 0;
-
-	} else{}
-
 	if(indx == 1000)  // every second
 	{
 		//Calculate the rpm
+		tick++;
 		ClicksPsec = (Pulse - OldPulse);  // Pulse or Clicks Per Second
 		OldPulse = Pulse;
 		indx = 0;
@@ -555,7 +541,7 @@ void MX_WINCH_DOWN_GP_RAMP_UP(void)
 		HAL_Delay(PWM_ON_DELAY(PWM_FIXED));
 
 		//sprintf((char*)buf, "Period: %d, %d, %f\r\n", gp_i, Pulse, ((float) Buf * (VREF_3v3 / ADC_SCALE_12) - 2.5) * 10);
-		sprintf((char*)buf, "PWM: %f, RPM: %f\r\n", i*0.3921, RPM__);
+		sprintf((char*)buf, "PWM: %f, RPM: %f, Tick: %lu\r\n", i*0.019605, RPM__, tick);
 
 		HAL_UART_Transmit(&huart2, (uint8_t *)buf, sizeof(buf), HAL_MAX_DELAY);
 
@@ -577,13 +563,15 @@ void MX_WINCH_DOWN_MOTO_RAMP_UP_DOWN(void)
 		//current = ((float) Buf * (VREF_3v3 / ADC_SCALE_12) - 2.5) * 10;
 
 		//sprintf((char*)buf, "PWM: %d, %d, %f\r\n", i, Pulse, current);
-		sprintf((char*)buf, "PWM: %f, RPM: %f\r\n", i*0.019605, RPM__);
+		sprintf((char*)buf, "PWM: %f, RPM: %f, Tick: %lu\r\n", i*0.019605, RPM__, tick);
 
 		HAL_UART_Transmit(&huart2, (uint8_t *)buf, sizeof(buf), HAL_MAX_DELAY);
 
 		HAL_Delay(PWM_INTERMITANT_UP);    //This finishes the ramp up in
 	}
 
+	//Spring Thing
+	poop_back = true;
 
 	for(i = INTERMITENT_DC; i> 0; i -- )
 		{
@@ -593,7 +581,7 @@ void MX_WINCH_DOWN_MOTO_RAMP_UP_DOWN(void)
 			//current = ((float) Buf * (VREF_3v3 / ADC_SCALE_12) - 2.5) * 10;
 
 			//sprintf((char*)buf, "PWM: %d, %d, %f\r\n", i, Pulse, current);
-			sprintf((char*)buf, "PWM: %f, RPM: %f\r\n", i*0.019605, RPM__);
+			sprintf((char*)buf, "PWM: %f, RPM: %f, Tick: %lu\r\n", i*0.019605, RPM__, tick);
 
 			HAL_UART_Transmit(&huart2, (uint8_t *)buf, sizeof(buf), HAL_MAX_DELAY);
 
@@ -601,19 +589,11 @@ void MX_WINCH_DOWN_MOTO_RAMP_UP_DOWN(void)
 
 
 			//Its only after this point the Spring thing and the Current thing needs to be activated
-			if(i <= 99 )
-			{
-				//Spring Thing
-				//poop_back = true;
-
-				//Current Thing
-				if((current < 1.0f)  &&  (current > -1.0f))
-				{
-					__HAL_TIM_SET_COMPARE(&tim3, TIM_CHANNEL_1, tim3.Init.Period * _8_BIT_MAP(0)/100);
-					sprintf((char*)buf, "Payload Soft landed:@Current: %f\r\n", current);
-					HAL_UART_Transmit(&huart2, (uint8_t *)buf, sizeof(buf), HAL_MAX_DELAY);
-				}
-			}
+//			if(i <= 99 )
+//			{
+//				//Spring Thing
+//				poop_back = true;
+//			}
 
 		}
 
@@ -647,7 +627,7 @@ void MX_WINCH_UP_MOTO_RAMP_UP_DOWN(void)
 			__HAL_TIM_SET_COMPARE(&tim3, TIM_CHANNEL_1, tim3.Init.Period * _8_BIT_MAP(i)/100);
 			//sprintf((char*)buf, "PWM: %d, %d, %f\r\n", i, Pulse, current);
 			//sprintf((char*)buf, "PWM: %d, RPM: %f, Current: %f\r\n", i, RPM__, current);
-			sprintf((char*)buf, "PWM: %f, RPM: %f\r\n", i*0.019605, RPM__);
+			sprintf((char*)buf, "PWM: %f, RPM: %f, Tick: %lu\r\n", i*0.019605, RPM__, tick);
 			HAL_UART_Transmit(&huart2, (uint8_t *)buf, sizeof(buf), HAL_MAX_DELAY);
 
 			HAL_Delay(PWM_INTERMITANT_UP);    //This finishes the ramp up in
@@ -682,7 +662,7 @@ void MX_WINCH_UP_MOTO_RAMP_UP_DOWN(void)
 				__HAL_TIM_SET_COMPARE(&tim3, TIM_CHANNEL_1, tim3.Init.Period * _8_BIT_MAP(i)/100);
 				//sprintf((char*)buf, "PWM: %d, %d, %f\r\n", i, Pulse, current);
 				//sprintf((char*)buf, "PWM: %d, RPM: %f, Current: %f\r\n", i, RPM__, current);
-				sprintf((char*)buf, "PWM: %f, RPM: %f\r\n", i*0.019605, RPM__);
+				sprintf((char*)buf, "PWM: %f, RPM: %f, Tick: %lu\r\n", i*0.019605, RPM__, tick);
 
 				HAL_UART_Transmit(&huart2, (uint8_t *)buf, sizeof(buf), HAL_MAX_DELAY);
 
