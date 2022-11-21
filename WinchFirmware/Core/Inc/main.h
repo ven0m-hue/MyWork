@@ -29,26 +29,49 @@ extern "C" {
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f4xx_hal.h"
 
+/* Private includes ----------------------------------------------------------*/
+/* USER CODE BEGIN Includes */
 #include <stdbool.h>
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdbool.h>
 
+/* USER CODE END Includes */
+#include "PID.h"
+#include "AS5600.h"
+
+/* Exported types ------------------------------------------------------------*/
+/* USER CODE BEGIN ET */
+
+/* USER CODE END ET */
+
+/* Exported constants --------------------------------------------------------*/
+/* USER CODE BEGIN EC */
+
+/* USER CODE END EC */
+
+/* Exported macro ------------------------------------------------------------*/
+/* USER CODE BEGIN EM */
+
+/* USER CODE END EM */
 
 void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
 
 /* Exported functions prototypes ---------------------------------------------*/
 void Error_Handler(void);
 
+/* USER CODE BEGIN EFP */
+
+/* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
+#define blue_led_Pin GPIO_PIN_13
+#define blue_led_GPIO_Port GPIOC
 #define encoder_a_Pin GPIO_PIN_0
 #define encoder_a_GPIO_Port GPIOA
 #define encoder_b_Pin GPIO_PIN_1
 #define encoder_b_GPIO_Port GPIOA
-#define spring_thing_ext_Pin GPIO_PIN_3
-#define spring_thing_ext_GPIO_Port GPIOA
 #define curr_sensor_Pin GPIO_PIN_4
 #define curr_sensor_GPIO_Port GPIOA
 #define winch_dir_Pin GPIO_PIN_5
@@ -59,16 +82,27 @@ void Error_Handler(void);
 #define bay_door_pwm_GPIO_Port GPIOA
 #define roof_top_ext_Pin GPIO_PIN_0
 #define roof_top_ext_GPIO_Port GPIOB
+#define roof_top_ext_EXTI_IRQn EXTI0_IRQn
 #define bay_dir_Pin GPIO_PIN_8
 #define bay_dir_GPIO_Port GPIOA
+#define spring_thing_ext_Pin_Pin GPIO_PIN_3
+#define spring_thing_ext_Pin_GPIO_Port GPIOB
+#define spring_thing_ext_Pin_EXTI_IRQn EXTI3_IRQn
 #define pixhawk_signal_Pin GPIO_PIN_6
 #define pixhawk_signal_GPIO_Port GPIOB
+/* USER CODE BEGIN Private defines */
 
 
 
-/*Private Macros*/
+//System Macros
+#define SYS_CLOCK_FREQ_50MHz  			50
+#define SYS_CLOCK_FREQ_80MHz 			80
+#define SYS_CLOCK_FREQ_120MHz			120
+#define SYS_CLOCK_FREQ_180MHz			180
 
 
+
+//MISC Macros
 #define DutyCycle(X)      ((X)*0.033 + 33)
 #define DutyCycleServo(X) ((X)*0.3611111111 + 15)
 
@@ -77,6 +111,10 @@ void Error_Handler(void);
 #define __PI				3.14159265
 
 
+#define RAD2DEG(X)			((X)*(180/__PI))
+
+
+#define __PWM_CCR_CHECK		2.5098
 
 //////////////////////////WINCH MACROS////////////////////////////////////
 
@@ -104,7 +142,7 @@ void Error_Handler(void);
 
 #define PWM_WINCH_DOWN_RAMP_DOWN_DURATION	30
 
-#define PWM_CONSTANT 			40
+#define PWM_CONSTANT 			60
 
 
 #define ENCODER_RAMP_UP_COUNT 		PWM_RAMP_UP_DURATION * 205
@@ -131,13 +169,7 @@ void Error_Handler(void);
 #define PAYLOAD_2		20
 #define PAYLOAD_3		30
 
-//Current Sensor
-#define ADC_SCALE_10		1023
-#define ADC_SCALE_12		(4096 - 1)
-
-#define VREF_5v5			5.0
-#define VREF_3v3			3.3f
-
+/* USER CODE END Private defines */
 
 #ifdef __cplusplus
 }

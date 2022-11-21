@@ -26,7 +26,6 @@
 /* USER CODE END INCLUDE */
 
 /* Private typedef -----------------------------------------------------------*/
-extern TIM_HandleTypeDef htim3;
 /* Private define ------------------------------------------------------------*/
 /* Private macro -------------------------------------------------------------*/
 
@@ -37,6 +36,8 @@ extern int16_t Data;
 extern uint32_t Data1;
 /* Private variables ---------------------------------------------------------*/
 char* E_Stop = "Emergency Stop";
+
+extern TIM_HandleTypeDef htim3;
 /* USER CODE END PV */
 
 /** @addtogroup STM32_USB_OTG_DEVICE_LIBRARY
