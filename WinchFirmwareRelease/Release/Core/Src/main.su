@@ -1,0 +1,8 @@
+../Core/Src/main.c:153:6:MX_Peripheral_Start_Init	16	static,ignoring_inline_asm
+../Core/Src/main.c:540:6:MX_WINCH_P_CONTROLLER	128	static
+../Core/Src/main.c:630:6:HAL_TIM_IC_CaptureCallback	24	static
+../Core/Src/main.c:701:6:HAL_SYSTICK_Callback	8	static
+../Core/Src/main.c:769:6:SystemClock_Config	96	static,ignoring_inline_asm
+../Core/Src/main.c:129:6:MX_Universal_Init	88	static,ignoring_inline_asm
+../Core/Src/main.c:222:5:main	24	static,ignoring_inline_asm
+../Core/Src/main.c:1152:6:Error_Handler	0	static,ignoring_inline_asm
