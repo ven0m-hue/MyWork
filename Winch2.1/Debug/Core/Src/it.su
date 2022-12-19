@@ -1,0 +1,11 @@
+../Core/Src/it.c:60:6:SysTick_Handler	8	static
+../Core/Src/it.c:70:6:TIM2_IRQHandler	8	static
+../Core/Src/it.c:80:6:TIM4_IRQHandler	8	static
+../Core/Src/it.c:89:6:USART1_IRQHandler	8	static
+../Core/Src/it.c:103:6:USART2_IRQHandler	8	static
+../Core/Src/it.c:118:6:DMA2_Stream0_IRQHandler	8	static
+../Core/Src/it.c:130:6:EXTI1_IRQHandler	24	static
+../Core/Src/it.c:166:6:EXTI2_IRQHandler	8	static
+../Core/Src/it.c:177:6:EXTI3_IRQHandler	16	static
+../Core/Src/it.c:220:6:EXTI15_10_IRQHandler	8	static
+../Core/Src/it.c:238:6:I2C1_EV_IRQHandler	8	static

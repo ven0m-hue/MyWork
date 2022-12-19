@@ -1,0 +1,10 @@
+../Core/Src/AS5600.c:12:9:AS5600_Init	24	static
+../Core/Src/AS5600.c:55:9:AS5600_GetRawAngle	24	static
+../Core/Src/AS5600.c:74:9:AS5600_GetRawAngleIT	24	static
+../Core/Src/AS5600.c:93:9:AS5600_GetScaledAngle	24	static
+../Core/Src/AS5600.c:113:9:writeByte	32	static
+../Core/Src/AS5600.c:125:9:readByte	32	static
+../Core/Src/AS5600.c:142:9:writeMem	16	static
+../Core/Src/AS5600.c:153:9:readMem	48	static
+../Core/Src/AS5600.c:176:9:writeMemIT	16	static
+../Core/Src/AS5600.c:190:9:readMemIT	40	static

@@ -1,0 +1,4 @@
+../Core/Src/it.c:29:6:SysTick_Handler	8	static
+../Core/Src/it.c:35:6:TIM2_IRQHandler	8	static
+../Core/Src/it.c:41:6:USART2_IRQHandler	16	static
+../Core/Src/it.c:95:6:EXTI9_5_IRQHandler	8	static
