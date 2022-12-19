@@ -14,7 +14,7 @@
 
 
 #define __8BIT_OUTPUT_MAX    180 
-#define __8BIT_OUTPUT_MIN    0
+#define __8BIT_OUTPUT_MIN    20  /*This min depends on the payload*/
 
 #define __MAXMEASUREMENT    780 // Lets say for now 
 

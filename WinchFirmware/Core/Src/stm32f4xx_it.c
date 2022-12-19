@@ -47,7 +47,7 @@ extern bool close_door;
 extern bool poop_back;
 extern bool spring_trig;
 //UART1 Communication Var
-char* data_btn = "Pressed!!!!";
+char* data_btn = "Spring Thing!!!!";
 char* E_Stop = "Emergency Stop";
 char* parked = "Payload Parked";
 extern uint16_t rawAngle;
@@ -335,7 +335,7 @@ void EXTI3_IRQHandler(void)
 	 *  PB3
 	 */
 
-	if(poop_back)
+ 	if(poop_back)
 	{
 		HAL_UART_Transmit(&huart1, (uint8_t *)data_btn, strlen(data_btn), HAL_MAX_DELAY);
 

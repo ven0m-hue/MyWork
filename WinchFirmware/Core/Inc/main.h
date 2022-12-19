@@ -169,7 +169,27 @@ void Error_Handler(void);
 #define PAYLOAD_2		20
 #define PAYLOAD_3		30
 
-/* USER CODE END Private defines */
+
+//For PixHawk Interfacing
+#define THROTTLE_FULL		1900
+#define THROTTLE_HALF		1450
+#define THROTTLE_NULL		1100
+
+//Timer IC
+#define TIMCLOCK   			90000000
+#define PRESCALAR  			90
+
+//Spring Thing
+#define POOP_BACK_AT_H		14.00 //This is in meters, on when to activate the spring thing.
+
+//Magnetic Encoder
+#define __RADIUS			1.800  //This is in centi meters which is later converted to the meters.
+
+//PController Macros
+#define LEN_TO_WINCH_DOWN	17//21.00
+#define THRESHOLD_LEN		13//18.00  //In meters.
+
+
 
 #ifdef __cplusplus
 }

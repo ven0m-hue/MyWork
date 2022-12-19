@@ -324,9 +324,9 @@ void HAL_TIM_IC_MspInit(TIM_HandleTypeDef* htim_ic)
     GPIO_InitStruct.Alternate = GPIO_AF2_TIM4;
     HAL_GPIO_Init(pixhawk_signal_GPIO_Port, &GPIO_InitStruct);
 
-  /* USER CODE BEGIN TIM4_MspInit 1 */
-
-  /* USER CODE END TIM4_MspInit 1 */
+    /* TIM4 interrupt Init */
+   HAL_NVIC_SetPriority(TIM4_IRQn, 0, 0);
+   HAL_NVIC_EnableIRQ(TIM4_IRQn);
   }
 
 }

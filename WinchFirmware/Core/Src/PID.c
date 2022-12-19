@@ -57,7 +57,7 @@ float P_Compute(PID_Handle_t *p, float measurement, float setPoint, float hal_ti
 			/*propotional*/
 			p->propotional = p->kp * err;
 
-			return (p->propotional *__8BIT_OUTPUT_MAX) <= 180 ? (p->propotional *__8BIT_OUTPUT_MAX) + __8BIT_OUTPUT_MIN : __8BIT_OUTPUT_MAX;
+			return (p->propotional *__8BIT_OUTPUT_MAX) <= (__8BIT_OUTPUT_MAX) ? (p->propotional *__8BIT_OUTPUT_MAX) + __8BIT_OUTPUT_MIN : __8BIT_OUTPUT_MAX;
 
 		}
 

@@ -12,38 +12,14 @@
 /* Private includes ----------------------------------------------------------*/
 //#include "usb_device.h"
 //#include "usbd_cdc_if.h"
-
 /* Private typedef -----------------------------------------------------------*/
 
 /*
  * TODO:
  * 1. Test rig compatible winch 2.0 full routine.
- * 2. Use the new encoder.
  */
 
-/* Private define ------------------------------------------------------------*/
-
-/* Private macro -------------------------------------------------------------*/
-//For PixHawk Interfacing
-#define THROTTLE_FULL		2000
-#define THROTTLE_HALF		1500
-#define THROTTLE_NULL		1000
-
-//Timer IC
-#define TIMCLOCK   			90000000
-#define PRESCALAR  			90
-
-//Spring Thing
-#define POOP_BACK_AT_H		16.00 //This is in meters, on when to activate the spring thing.
-
-//Magnetic Encoder
-#define __RADIUS			2.600  //This is in centi meters which is later converted to the meters.
-
-//PController Macros
-#define LEN_TO_WINCH_DOWN	21.00
-#define THRESHOLD_LEN		18.00  //In meters.
-
-/* Private variables ---------------------------------------------------------*/
+/* Structure definitions ------------------------------------------------------------*/
 ADC_HandleTypeDef hadc1;
 DMA_HandleTypeDef hdma_adc1;
 
@@ -56,8 +32,12 @@ UART_HandleTypeDef huart2;
 
 I2C_HandleTypeDef hi2c1;
 AS5600_Handle_t as5600;
+/* Private macro -------------------------------------------------------------*/
+/*
+ * @main.h
+ */
 
-
+/* Private variables ---------------------------------------------------------*/
 //UART2 variables
 uint8_t receivedData;
 uint8_t data_buffer[5];
@@ -82,8 +62,8 @@ float frequency = 0;
 uint16_t LastRead = 0;
 uint16_t CurrRead = 0;
 uint16_t rawAngle = 0;
-uint16_t rev = 0;
-uint32_t Counts = 0;
+int16_t rev = 0;
+int16_t Counts = 0;
 float Length = 0.0f;
 
 //Bool flag for the Winch Start Seq
@@ -224,7 +204,7 @@ void MX_Peripheral_Start_Init()
 
 	sprintf((char*)buf, "Initial Angle : %d\r\n", rawAngle);
 	HAL_UART_Transmit(&huart1, (uint8_t *)buf, sizeof(buf), HAL_MAX_DELAY);
-
+//
 	memset(buf, 0, sizeof(buf));
 
 	/*Transmit to the terminal at start to confirm the initiation.*/
@@ -248,8 +228,9 @@ int main(void)
   /* MCU Peripherals Start Commands-------------------------------------------*/
 	MX_Peripheral_Start_Init();
 
-  /* Application Level Calls--------------------------------------------------*/
 
+	//__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_2, htim3.Init.Period * _8_BIT_MAP(60)/100);
+  /* Application Level Calls--------------------------------------------------*/
 
 	/*
 	 * Winch Start Sequence
@@ -257,6 +238,8 @@ int main(void)
 	 * or else keep looping until forever.
 	 */
 	MX_WINCH_START_SEQ();
+
+	HAL_GPIO_WritePin(blue_led_GPIO_Port, blue_led_Pin, GPIO_PIN_SET);
 
 
 	/*
@@ -270,12 +253,13 @@ int main(void)
 	 * Spring triggering is the end of Winch Down Sequence.
 	 */
 
+
 	//MX_BomBay_Door_Open();
 
 	//HAL_Delay(1000); //Delay for the door to settle and prep for winch down.
 
-	MX_WINCH_DOWN_GP_RAMP_UP();
-	MX_WINCH_DOWN_MOTO_RAMP_UP_DOWN();
+	//MX_WINCH_DOWN_GP_RAMP_UP();
+	//MX_WINCH_DOWN_MOTO_RAMP_UP_DOWN();
 
 
 //	if(spring_trig)
@@ -297,16 +281,19 @@ int main(void)
 	 *
 	 */
 	//This is the wait period for the winch up sequence.
-	HAL_Delay(5000);
+	//HAL_Delay(5000);
 
-	MX_WINCH_UP_MOTO_RAMP_UP_DOWN();
+	//MX_WINCH_UP_MOTO_RAMP_UP_DOWN();
+
+	MX_WINCH_P_CONTROLLER();
 
 	//Until the flag for door open is not set do nothing
 	//If it breaks the loop, it means hook has reached the bay roof
 	//Start the Door Close sequence
 	//MX_BomBay_Door_Close();
 
-	while(1);
+	while(1)
+	{}
 
 	return 0;
 
@@ -453,7 +440,7 @@ void MX_WINCH_DOWN_MOTO_RAMP_UP_DOWN(void)
 
  	Counts = rev;
 
- 	Length = (2 * __PI * 3.14 * Counts) * 0.1428;
+ 	//Length =  -((2 * __PI * 3.14 * Counts) * 0.1428);
 
  	//sprintf((char*)buf, "PWM | Current | Length: %d, %d, %f, %f\r\n", i, rev, ((float) Buf * (VREF_3v3 / ADC_SCALE_12) - 2.5) * 10, Length);
  	//HAL_UART_Transmit(&huart1, (uint8_t *)buf, sizeof(buf), HAL_MAX_DELAY);
@@ -550,12 +537,16 @@ void MX_WINCH_P_CONTROLLER(void)
 	uint32_t motor_output = 0;
 
 	pid.Ts = 10; // 10 milliseconds.
-	pid.kp = 1.5;
+	pid.kp = 2;
 	PID_Init(&pid);
+
+
 
 	while((Length <= LEN_TO_WINCH_DOWN)  && !(spring_trig))
 	{
 		motor_output = P_Compute(&pid, Length, LEN_TO_WINCH_DOWN, uwTick);
+
+		if(motor_output <= 20) motor_output = __8BIT_OUTPUT_MIN;
 
 		__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, htim3.Init.Period * _8_BIT_MAP(motor_output)/100);
 
@@ -588,10 +579,14 @@ void MX_WINCH_P_CONTROLLER(void)
 
 	}
 
-	Counts = rev;
+	__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, htim3.Init.Period * _8_BIT_MAP(0)/100);
+
+	if(rev < 0) Counts = -rev;
+	else Counts = rev;
 
 
-	HAL_Delay(2000);
+
+	HAL_Delay(5000);
 
 
 	MX_WINCH_UP_MOTO_RAMP_UP_DOWN();
@@ -729,11 +724,10 @@ void HAL_SYSTICK_Callback()
 		}
 	}
 
-	if(indx == 30)  // every 10 millisecond
+	if(indx == 10)  // every 10 millisecond
 	{
 		//Calculate the rpm
 		indx = 0;
-
 		AS5600_GetRawAngle(&as5600);
 
 		CurrRead = as5600.rawAngle;
@@ -745,10 +739,17 @@ void HAL_SYSTICK_Callback()
 		//sprintf((char*)buf, "Rev : %d\r\n", rev);
 		//HAL_UART_Transmit(&huart1, (uint8_t *)buf, sizeof(buf), HAL_MAX_DELAY);
 
+		//HAL_Delay(10);
+
 		LastRead = CurrRead;
 
-		Length = (2 * __PI * __RADIUS * rev) * 0.01;   //Converting centi to meters
-	}
+		if(rev < 0) Length = (2 * __PI * __RADIUS * (-rev)) * 0.01;   //Converting centi to meters
+
+		else Length = (2 * __PI * __RADIUS * (rev)) * 0.01;   //Converting centi to meters
+
+
+
+		}
 
 
 	else{}
@@ -1120,6 +1121,14 @@ static void MX_GPIO_Init(void)
 
   HAL_NVIC_EnableIRQ(EXTI0_IRQn);
   HAL_NVIC_SetPriority(EXTI0_IRQn,15,0);
+
+  /*Configure GPIO pins : internal LED */
+  GPIO_InitStruct.Pin = blue_led_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(blue_led_GPIO_Port, &GPIO_InitStruct);
+
 
 }
 
