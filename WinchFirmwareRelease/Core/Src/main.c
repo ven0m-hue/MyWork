@@ -75,6 +75,7 @@ bool START_THE_SEQUENCE = false;
 //Spring thing variables
 bool poop_back = false;
 bool spring_trig = false;
+uint8_t spring_trig_count = 0;
 
 //Bay Door variables
 bool close_door = false;
@@ -109,7 +110,7 @@ static void MX_ADC1_Init(void);
 static void MX_TIM2_Init(void);
 static void MX_DMA_Init(void);
 static void MX_TIM4_Init(void);
-//static void MX_UART1_Init(void);
+static void MX_UART1_Init(void);
 static void MX_UART2_Init(void);
 static void MX_I2C1_Init(void);
 
@@ -118,7 +119,7 @@ static void MX_WINCH_START_SEQ(void);
 static void MX_WINCH_DOWN_MOTO_RAMP_UP_DOWN(void);
 static void MX_WINCH_UP_MOTO_RAMP_UP_DOWN(void);
 static void MX_WINCH_DOWN_GP_RAMP_UP(void);
-
+static void MX_SOFT_START_P_CONTROLLER_RAMP_UP(void);
 void MX_WINCH_P_CONTROLLER(void);
 
 static void MX_BomBay_Door_Open(void);
@@ -143,7 +144,7 @@ void MX_Universal_Init()
   MX_TIM2_Init();
   MX_TIM3_Init();
   MX_TIM4_Init();
-  //MX_UART1_Init();
+  MX_UART1_Init();
   MX_UART2_Init();
   MX_I2C1_Init();
 
@@ -163,7 +164,7 @@ void MX_Peripheral_Start_Init()
 	if (HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_1) != HAL_OK) Error_Handler();
 	if (HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_2) != HAL_OK) Error_Handler();
 
-	if(HAL_TIM_IC_Start_IT(&htim4, TIM_CHANNEL_1)!= HAL_OK) Error_Handler();
+	//if(HAL_TIM_IC_Start_IT(&htim4, TIM_CHANNEL_1)!= HAL_OK) Error_Handler();
 
 	//if(HAL_ADC_Start_DMA(&hadc1, &Buf, 1) != HAL_OK) Error_Handler();
 
@@ -286,9 +287,11 @@ int main(void)
 
 	//MX_WINCH_UP_MOTO_RAMP_UP_DOWN();
 
+	MX_SOFT_START_P_CONTROLLER_RAMP_UP();
+
 	MX_WINCH_P_CONTROLLER();
 
-	HAL_Delay(5000);
+	HAL_Delay(8000);
 
 
 	MX_WINCH_UP_MOTO_RAMP_UP_DOWN();
@@ -509,7 +512,7 @@ void MX_WINCH_UP_MOTO_RAMP_UP_DOWN(void)
 
 	//Ramp Down Sequence
 
-	for(i = INTERMITENT_DC; i> 20; i -- )
+	for(i = INTERMITENT_DC; i> 60; i -- )
 		{
 			if(rev > loop_5)
 			{
@@ -542,6 +545,22 @@ void MX_WINCH_UP_MOTO_RAMP_UP_DOWN(void)
 }
 
 
+static void MX_SOFT_START_P_CONTROLLER_RAMP_UP(void)
+{
+	for(i = PWM_START; i< INTERMITENT_DC; i ++ )
+	{
+
+		__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_2, htim3.Init.Period * _8_BIT_MAP(i)/100);
+		//sprintf((char*)buf, "PWM: %d, Length: %f\r\n", i, Length);
+
+		//HAL_UART_Transmit(&huart1, (uint8_t *)buf, sizeof(buf), HAL_MAX_DELAY);
+		//CDC_Transmit_FS((uint8_t *)buf, sizeof(buf));
+
+		HAL_Delay(PWM_INTERMITANT_UP);    //This finishes the ramp up in
+	}
+}
+
+
 /*
  * This sub-routine interfaces the P-based controller
  */
@@ -551,7 +570,7 @@ void MX_WINCH_P_CONTROLLER(void)
 	uint32_t motor_output = 0;
 
 	pid.Ts = 10; // 10 milliseconds.
-	pid.kp = 2;
+	pid.kp = 1.5;
 	PID_Init(&pid);
 
 
@@ -878,7 +897,7 @@ static void MX_I2C1_Init(void)
 }
 
 
-#if 0
+
 /**
   * @brief UART1 Initialization Function
   * @param None
@@ -902,7 +921,6 @@ void MX_UART1_Init(void)
 
 }
 
-#endif
 /**
   * @brief UART2 Initialization Function
   * @param None

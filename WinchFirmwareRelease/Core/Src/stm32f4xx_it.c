@@ -335,13 +335,18 @@ void EXTI3_IRQHandler(void)
 	 *  PB3
 	 */
 
+	/*
+	 * Just a check for how many times does the spring trigger
+	 */
+	spring_trig_count++;
+
  	if(poop_back)
 	{
 		HAL_UART_Transmit(&huart1, (uint8_t *)data_btn, strlen(data_btn), HAL_MAX_DELAY);
 
 		__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_2, htim3.Init.Period * 0/100);
 
-		for(int i =0; i<12000; i++)
+		for(int i =0; i<24000; i++)
 		{
 
 			__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_2, htim3.Init.Period * _8_BIT_MAP(PAYLOAD_3)/100);
