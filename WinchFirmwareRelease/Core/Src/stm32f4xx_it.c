@@ -51,6 +51,7 @@ char* data_btn = "Spring Thing!!!!";
 char* E_Stop = "Emergency Stop";
 char* parked = "Payload Parked";
 extern uint16_t rawAngle;
+extern __IO uint32_t spring_trig_count;
 /* External variables --------------------------------------------------------*/
 //extern PCD_HandleTypeDef hpcd_USB_OTG_FS;
 //extern DMA_HandleTypeDef hdma_adc1;
@@ -295,7 +296,7 @@ void EXTI0_IRQHandler(void)
 
 	if(close_door)
 	{
-		HAL_UART_Transmit(&huart1, (uint8_t *)parked, strlen(parked), HAL_MAX_DELAY);
+		//HAL_UART_Transmit(&huart1, (uint8_t *)parked, strlen(parked), HAL_MAX_DELAY);
 
 		__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_2, htim3.Init.Period * _8_BIT_MAP(0)/100);
 
@@ -304,7 +305,7 @@ void EXTI0_IRQHandler(void)
 		bay_door_close = true;
 
 
-		HAL_GPIO_WritePin(winch_dir_GPIO_Port, winch_dir_Pin, GPIO_PIN_RESET);
+		//HAL_GPIO_WritePin(winch_dir_GPIO_Port, winch_dir_Pin, GPIO_PIN_RESET);
 
 		/*
 		 * Does not work well with the 2 channel motor driver
@@ -314,8 +315,8 @@ void EXTI0_IRQHandler(void)
 				__HAL_TIM_SET_COMPARE(&hhtim3, TIM_CHANNEL_1, hhtim3.Init.Period * _8_BIT_MAP(PAYLOAD_2)/100);
 			}
 		*/
-		__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_2, htim3.Init.Period * _8_BIT_MAP(0)/100);
-		HAL_TIM_PWM_Stop(&htim3, TIM_CHANNEL_2);
+
+		//HAL_TIM_PWM_Stop(&htim3, TIM_CHANNEL_2);
 		spring_trig = false;
 	}
 
@@ -342,7 +343,7 @@ void EXTI3_IRQHandler(void)
 
  	if(poop_back)
 	{
-		HAL_UART_Transmit(&huart1, (uint8_t *)data_btn, strlen(data_btn), HAL_MAX_DELAY);
+		//HAL_UART_Transmit(&huart1, (uint8_t *)data_btn, strlen(data_btn), HAL_MAX_DELAY);
 
 		__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_2, htim3.Init.Period * 0/100);
 
@@ -366,10 +367,10 @@ void EXTI3_IRQHandler(void)
 
 }
 
-void I2C1_EV_IRQHandler(void)
-{
-	rawAngle = as5600.rawAngle;
-}
+//void I2C1_EV_IRQHandler(void)
+//{
+//	rawAngle = as5600.rawAngle;
+//}
 ///**
 //  * @brief This function handles ADC1 global interrupt.
 //  */

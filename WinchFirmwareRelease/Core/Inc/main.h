@@ -45,7 +45,7 @@ extern "C" {
 /* USER CODE BEGIN ET */
 
 /* USER CODE END ET */
-
+#include "common\mavlink.h"
 /* Exported constants --------------------------------------------------------*/
 /* USER CODE BEGIN EC */
 
@@ -134,11 +134,11 @@ void Error_Handler(void);
 
 
 #define PWM_RAMP_UP_DURATION   35
-#define PWM_INTERMITANT_UP     20   //90 //90
+#define PWM_INTERMITANT_UP     40   //90 //90
 
 
 
-#define PWM_RAMP_DOWN_DURATION  85//For heavier payload  lighter payload ->75
+#define PWM_RAMP_DOWN_DURATION  120//For heavier payload  lighter payload ->75
 
 #define PWM_WINCH_DOWN_RAMP_DOWN_DURATION	30
 
@@ -160,7 +160,7 @@ void Error_Handler(void);
 
 //This part is for BOMBAY_DOORS
 #define BOMBAY_OPEN_CLOSE			255
-#define BOMBAY_DOOR_ONOFF_TIME		1500
+#define BOMBAY_DOOR_ONOFF_TIME		1600
 
 
 //Payload Mass Macros for re-wind after roof touch
@@ -183,11 +183,11 @@ void Error_Handler(void);
 #define POOP_BACK_AT_H		14.00 //This is in meters, on when to activate the spring thing.
 
 //Magnetic Encoder
-#define __RADIUS			2.3  //This is in centi meters which is later converted to the meters.
+#define __RADIUS			1.55//2.3  //This is in centi meters which is later converted to the meters.
 
 //PController Macros
 #define LEN_TO_WINCH_DOWN	20//21.00
-#define THRESHOLD_LEN		16//18.00  //In meters.
+#define THRESHOLD_LEN		16.4//18.00  //In meters.
 
 
 

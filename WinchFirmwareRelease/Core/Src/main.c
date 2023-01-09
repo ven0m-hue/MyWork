@@ -8,7 +8,7 @@
   */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
-
+#include "myMav.h"
 /* Private includes ----------------------------------------------------------*/
 //#include "usb_device.h"
 //#include "usbd_cdc_if.h"
@@ -75,7 +75,7 @@ bool START_THE_SEQUENCE = false;
 //Spring thing variables
 bool poop_back = false;
 bool spring_trig = false;
-uint8_t spring_trig_count = 0;
+__IO uint32_t spring_trig_count = 0;
 
 //Bay Door variables
 bool close_door = false;
@@ -86,8 +86,8 @@ bool bay_door_close = false;
 uint16_t i = 0;  //PWM Ramp index
 
 //Variable for the GP sequence
-uint16_t gp_i = 64;
-
+uint16_t gp_i = 128;
+float leg_len = 0;
 //Usb Variables
 //uint8_t buf[64];
 //uint8_t buffer[5];
@@ -164,7 +164,7 @@ void MX_Peripheral_Start_Init()
 	if (HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_1) != HAL_OK) Error_Handler();
 	if (HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_2) != HAL_OK) Error_Handler();
 
-	//if(HAL_TIM_IC_Start_IT(&htim4, TIM_CHANNEL_1)!= HAL_OK) Error_Handler();
+	if(HAL_TIM_IC_Start_IT(&htim4, TIM_CHANNEL_1)!= HAL_OK) Error_Handler();
 
 	//if(HAL_ADC_Start_DMA(&hadc1, &Buf, 1) != HAL_OK) Error_Handler();
 
@@ -203,6 +203,8 @@ void MX_Peripheral_Start_Init()
 
 	LastRead = CurrRead;
 
+	rev = 0;
+	Length = 0;
 	//sprintf((char*)buf, "Initial Angle : %d\r\n", rawAngle);
 	//HAL_UART_Transmit(&huart1, (uint8_t *)buf, sizeof(buf), HAL_MAX_DELAY);
 //
@@ -254,22 +256,12 @@ int main(void)
 	 *
 	 * Spring triggering is the end of Winch Down Sequence.
 	 */
-
-
 	//MX_BomBay_Door_Open();
 
-	//HAL_Delay(1000); //Delay for the door to settle and prep for winch down.
+	//HAL_Delay(2000); //Delay for the door to settle and prep for winch down.
 
-	//MX_WINCH_DOWN_GP_RAMP_UP();
-	//MX_WINCH_DOWN_MOTO_RAMP_UP_DOWN();
+	MX_WINCH_DOWN_GP_RAMP_UP();
 
-
-//	if(spring_trig)
-//	{
-//		if (HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_1) != HAL_OK) Error_Handler();
-//	}
-
-	//End of the winch down sequence.
 
 	/*
 	 * This portion of the code deals with winch up sequence,
@@ -279,33 +271,22 @@ int main(void)
 	 * 4. Once the roof switch triggers, initiate the Mission End Sequence.
 	 * 5. Mission End Sequence: Cut down the motor supply, close the door.
 	 *
-	 * note TODO: current sensor for detecting if payload is landed.
+	 * note TODO: current thing for detecting if payload is landed.
 	 *
 	 */
-	//This is the wait period for the winch up sequence.
-	//HAL_Delay(5000);
-
-	//MX_WINCH_UP_MOTO_RAMP_UP_DOWN();
 
 	MX_SOFT_START_P_CONTROLLER_RAMP_UP();
 
 	MX_WINCH_P_CONTROLLER();
 
-	HAL_Delay(8000);
+
+	leg_len = Length; //Store the length of the first leg.
+
+	HAL_Delay(8000);  //Delay time
 
 
 	MX_WINCH_UP_MOTO_RAMP_UP_DOWN();
 
-
-	//HAL_TIM_PWM_Stop(&htim3, TIM_CHANNEL_2);
-
-	//HAL_Delay(20);
-
-	//if (HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_2) != HAL_OK) Error_Handler();
-	//__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_2, htim3.Init.Period * _8_BIT_MAP(PWM_CONSTANT)/100);
-
-	//Until the flag for door open is not set do nothing
-	//If it breaks the loop, it means hook has reached the bay roof
 	//Start the Door Close sequence
 	//MX_BomBay_Door_Close();
 
@@ -329,6 +310,8 @@ static void MX_WINCH_START_SEQ()
 
 	Start_Flag = false;
 
+	//MavLinkReceiveHoverCurr(&huart2, receivedData);
+
 }
 
 
@@ -339,11 +322,11 @@ void MX_BomBay_Door_Open(void)
 	{
 		HAL_GPIO_WritePin(winch_dir_GPIO_Port, winch_dir_Pin, GPIO_PIN_RESET);
 		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, GPIO_PIN_RESET);
-		__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_2, htim3.Init.Period * _8_BIT_MAP(BOMBAY_OPEN_CLOSE)/100);
+		__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, htim3.Init.Period * _8_BIT_MAP(BOMBAY_OPEN_CLOSE)/100);
 
 		HAL_Delay(BOMBAY_DOOR_ONOFF_TIME);
 
-		__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_2, htim3.Init.Period * _8_BIT_MAP(0)/100);
+		__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, htim3.Init.Period * _8_BIT_MAP(0)/100);
 
 	}
 
@@ -357,16 +340,17 @@ void MX_BomBay_Door_Open(void)
 
 void MX_BomBay_Door_Close()
 {
+	//To avoid false triggers
 	while(!(bay_door_close));
 
 	if(BOMBAY_OPEN_CLOSE > 0)
 	{
-		HAL_GPIO_WritePin(GPIOC, GPIO_PIN_0, GPIO_PIN_SET);
+		HAL_GPIO_WritePin(winch_dir_GPIO_Port, winch_dir_Pin, GPIO_PIN_SET);
 		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, GPIO_PIN_SET);
-		__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_2, htim3.Init.Period * _8_BIT_MAP(BOMBAY_OPEN_CLOSE)/100);
+		__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, htim3.Init.Period * _8_BIT_MAP(BOMBAY_OPEN_CLOSE)/100);
 
 		HAL_Delay(2200);
-		__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_2, htim3.Init.Period * _8_BIT_MAP(0)/100);
+		__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, htim3.Init.Period * _8_BIT_MAP(0)/100);
 	}
 
 	else
@@ -583,22 +567,50 @@ void MX_WINCH_P_CONTROLLER(void)
 
 		__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_2, htim3.Init.Period * _8_BIT_MAP(motor_output)/100);
 
-		sprintf((char*)buf, "PWM: %ld, Length: %f, Tick: %ld\r\n", motor_output, Length, tick); //i*0.019605
+		//sprintf((char*)buf, "PWM: %ld, Length: %f, Tick: %ld\r\n", motor_output, Length, tick); //i*0.019605
 
 		//HAL_Delay(10);
 
 		if(Length >= THRESHOLD_LEN)
 		{
 			poop_back = true;
+
+			/*
+			 * After Threshold length is spooled,
+			 * 1. Keep asking for mavlink based packets.
+			 * 2. Verify the data from here on.
+			 * 3. Keep a bool variable to keep track.
+			 * 4. If the current drops by more than set amount of current then break the sequence.
+			 *
+			 *
+			 * Way to do this is enable a flag at this point, could make use of poop_back
+			 * Once this flag is enabled, mavlink packets for current data could be requested in the interrupt mode.
+			 * Defer the interrupt, here to enable one more flag so that it can do further computation and arrive at a decision.
+			 */
+
+
+//			if((curr_curr > 0) && (curr_curr < hover_curr))
+//			{
+//				//Stop the motor?
+//
+//				//Then Store the Currene data in prev_curr
+//				prev_curr = curr_curr;
+//
+//				//Disable the current_affair
+//				poop_back = false;
+//				curr_curr = 0;
+//			}
+
+		//	else curr_curr = 0; /*This is to assure that new value has been updated*/
+
 		}
 		//Flag
-		prevTick = tick;
+		//prevTick = tick;
 
 		//HAL_UART_Transmit(&huart1, (uint8_t *)buf, sizeof(buf), HAL_MAX_DELAY);
 
 
 	}
-
 
 	//__HAL_TIM_SET_COMPARE(&tim3, TIM_CHANNEL_1, tim3.Init.Period * 0/100);
 
@@ -766,15 +778,11 @@ void HAL_SYSTICK_Callback()
 		//sprintf((char*)buf, "Rev : %d\r\n", rev);
 		//HAL_UART_Transmit(&huart1, (uint8_t *)buf, sizeof(buf), HAL_MAX_DELAY);
 
-		//HAL_Delay(10);
-
 		LastRead = CurrRead;
 
 		if(rev < 0) Length = (2 * __PI * __RADIUS * (-rev)) * 0.01;   //Converting centi to meters
 
 		else Length = (2 * __PI * __RADIUS * (rev)) * 0.01;   //Converting centi to meters
-
-
 
 		}
 
