@@ -89,7 +89,9 @@ void Error_Handler(void);
 #define spring_thing_ext_Pin_GPIO_Port GPIOB
 #define spring_thing_ext_Pin_EXTI_IRQn EXTI3_IRQn
 #define pixhawk_signal_Pin GPIO_PIN_6
+#define man_winch_Pin GPIO_PIN_10
 #define pixhawk_signal_GPIO_Port GPIOB
+#define man_winch_GPIO_Port GPIOB
 /* USER CODE BEGIN Private defines */
 
 
@@ -169,11 +171,26 @@ void Error_Handler(void);
 #define PAYLOAD_2		20
 #define PAYLOAD_3		30
 
+//Payload Mass based PWM
+#define PWM_PAYLOAD_0   PAYLOAD_0
+#define PWM_PAYLOAD_2   PAYLOAD_2
+#define PWM_PAYLOAD_3   PAYLOAD_3
+#define PWM_STOP		0
+
+#define PWM_PAYLOAD_2o 40
+
 
 //For PixHawk Interfacing
 #define THROTTLE_FULL		1900
 #define THROTTLE_HALF		1450
 #define THROTTLE_NULL		1100
+
+
+//For Manual Winch
+#define MAN_WINCH_UP	THROTTLE_FULL
+#define MAN_WINCH_STOP  THROTTLE_HALF
+#define MAN_WINCH_DOWN  THROTTLE_NULL
+
 
 //Timer IC
 #define TIMCLOCK   			90000000
@@ -183,13 +200,14 @@ void Error_Handler(void);
 #define POOP_BACK_AT_H		14.00 //This is in meters, on when to activate the spring thing.
 
 //Magnetic Encoder
-#define __RADIUS			1.55//2.3  //This is in centi meters which is later converted to the meters.
+#define __RADIUS			1.8//2.3  //This is in centi meters which is later converted to the meters.
 
 //PController Macros
-#define LEN_TO_WINCH_DOWN	20//21.00
-#define THRESHOLD_LEN		16.4//18.00  //In meters.
+#define LEN_TO_WINCH_DOWN	25//21.00
+#define THRESHOLD_LEN		20//16.4//18.00  //In meters.
 
 
+#define WHAT_PAYLOAD	PAYLOAD_2
 
 #ifdef __cplusplus
 }

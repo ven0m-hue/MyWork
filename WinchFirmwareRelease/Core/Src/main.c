@@ -49,13 +49,23 @@ uint8_t buf[64];
 
 
 
-//Timer 2 IC Variables
+//Timer 4 IC Variables
 uint32_t IC_Val1 = 0;
 uint32_t IC_Val2 = 0;
 uint32_t Difference = 0;
 int Is_First_Captured = 0;
 uint32_t usWidth = 0;
 float frequency = 0;
+_Bool software_deinit = false;
+
+//Timer 2 IC Variables
+uint32_t IC2_Val1 = 0;
+uint32_t IC2_Val2 = 0;
+uint32_t Difference2 = 0;
+int Is_First_Captured2 = 0;
+uint32_t usWidth2 = 0;
+float frequency2 = 0;
+
 
 
 //Encoder Variables
@@ -102,6 +112,17 @@ uint16_t indx = 0;
 uint32_t tick = 0;
 uint32_t prevTick = 0;
 
+//Man Winch
+_Bool payload_at_0_up  = false;
+_Bool payload_at_20_up = false;
+_Bool payload_at_30_up = false;
+
+_Bool payload_at_0_stop  = false;
+
+_Bool payload_at_0_down  = false;
+_Bool payload_at_20_down = false;
+_Bool payload_at_30_down = false;
+
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
@@ -121,6 +142,7 @@ static void MX_WINCH_UP_MOTO_RAMP_UP_DOWN(void);
 static void MX_WINCH_DOWN_GP_RAMP_UP(void);
 static void MX_SOFT_START_P_CONTROLLER_RAMP_UP(void);
 void MX_WINCH_P_CONTROLLER(void);
+void MX_WINCH_UP_P_CONTROLLER(void);
 
 static void MX_BomBay_Door_Open(void);
 static void MX_BomBay_Door_Close(void);
@@ -159,12 +181,14 @@ void MX_Peripheral_Start_Init()
 	 *  3. TIM Input Cpature Mode Start
 	 *  4. ADC DMA Start
 	 */
-	if(HAL_TIM_Encoder_Start_IT(&htim2, TIM_CHANNEL_ALL) != HAL_OK)  Error_Handler();
+	//if(HAL_TIM_Encoder_Start_IT(&htim2, TIM_CHANNEL_ALL) != HAL_OK)  Error_Handler();
 
 	if (HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_1) != HAL_OK) Error_Handler();
 	if (HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_2) != HAL_OK) Error_Handler();
 
 	if(HAL_TIM_IC_Start_IT(&htim4, TIM_CHANNEL_1)!= HAL_OK) Error_Handler();
+	if(HAL_TIM_IC_Start_IT(&htim2, TIM_CHANNEL_3)!= HAL_OK) Error_Handler();
+
 
 	//if(HAL_ADC_Start_DMA(&hadc1, &Buf, 1) != HAL_OK) Error_Handler();
 
@@ -282,13 +306,21 @@ int main(void)
 
 	leg_len = Length; //Store the length of the first leg.
 
-	HAL_Delay(8000);  //Delay time
+	HAL_Delay(4000);  //Delay time
 
 
-	MX_WINCH_UP_MOTO_RAMP_UP_DOWN();
-
+	//MX_WINCH_UP_MOTO_RAMP_UP_DOWN();
+	MX_WINCH_UP_P_CONTROLLER();
 	//Start the Door Close sequence
 	//MX_BomBay_Door_Close();
+
+	/*
+	 * After the entire sequence maybe enable the Timer 2 Channel 3 IC
+	 *
+	 * Just for now compare it with the length.
+	 */
+	if(Length < 0.0)
+		HAL_TIM_IC_MspInit(&htim2);
 
 	while(1)
 	{}
@@ -310,6 +342,19 @@ static void MX_WINCH_START_SEQ()
 
 	Start_Flag = false;
 
+	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, GPIO_PIN_RESET); // Was door now winch
+	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_RESET); // Was winch now door pin
+
+	/*
+	 * Diable the Timer 2 Channel 3 IC
+	 */
+	HAL_TIM_IC_Stop(&htim2, TIM_CHANNEL_3);
+	HAL_TIM_IC_MspDeInit(&htim2);
+
+	/*
+	 * 1. Receive the hover current.
+	 * 2. So that it could be compared against the current recevied during the touchdown.
+	 */
 	//MavLinkReceiveHoverCurr(&huart2, receivedData);
 
 }
@@ -531,6 +576,9 @@ void MX_WINCH_UP_MOTO_RAMP_UP_DOWN(void)
 
 static void MX_SOFT_START_P_CONTROLLER_RAMP_UP(void)
 {
+	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, GPIO_PIN_RESET); //GPIOC and PIN_0 changed
+
 	for(i = PWM_START; i< INTERMITENT_DC; i ++ )
 	{
 
@@ -546,7 +594,7 @@ static void MX_SOFT_START_P_CONTROLLER_RAMP_UP(void)
 
 
 /*
- * This sub-routine interfaces the P-based controller
+ * This sub-routine interfaces the P-based controller for Winch Down with Payload
  */
 void MX_WINCH_P_CONTROLLER(void)
 {
@@ -554,7 +602,7 @@ void MX_WINCH_P_CONTROLLER(void)
 	uint32_t motor_output = 0;
 
 	pid.Ts = 10; // 10 milliseconds.
-	pid.kp = 1.5;
+	pid.kp = 2.0;
 	PID_Init(&pid);
 
 
@@ -592,8 +640,8 @@ void MX_WINCH_P_CONTROLLER(void)
 //			if((curr_curr > 0) && (curr_curr < hover_curr))
 //			{
 //				//Stop the motor?
-//
-//				//Then Store the Currene data in prev_curr
+//				Here.
+//				//Then Store the current Current  data in prev_curr
 //				prev_curr = curr_curr;
 //
 //				//Disable the current_affair
@@ -628,6 +676,58 @@ void MX_WINCH_P_CONTROLLER(void)
 
 	if(rev < 0) Counts = -rev;
 	else Counts = rev;
+
+}
+
+/*
+ * This sub-routine interfaces the P-based controller for Winch Up with Payload
+ */
+void MX_WINCH_UP_P_CONTROLLER(void)
+{
+
+	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_SET);
+	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, GPIO_PIN_SET); //GPIOC and PIN_0 changed
+
+
+
+	PID_Handle_t pid;
+	uint32_t motor_output = 0;
+
+	pid.Ts = 10; // 10 milliseconds.
+	pid.kp = 3;
+	PID_Init(&pid);
+
+	float SetPoint = leg_len;
+	float Measurement = (SetPoint - Length);
+	float ThresholdLen = SetPoint * 0.90;
+
+	while((Measurement <= SetPoint))
+	{
+		motor_output = P_Compute(&pid, Measurement, SetPoint, uwTick);
+
+		if(motor_output <= 30) motor_output = __8BIT_OUTPUT_MIN;
+
+		__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_2, htim3.Init.Period * _8_BIT_MAP(motor_output)/100);
+
+
+
+		if(Measurement >= ThresholdLen)
+		{
+
+			/*
+			 *Enable the close door flag
+			 */
+			close_door = true;
+		}
+
+		Measurement = (SetPoint - Length);
+		if(Length < 0.2)
+		{
+			__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_2, htim3.Init.Period * _8_BIT_MAP(PWM_STOP)/100);
+			break;
+		}
+
+	}
 
 }
 
@@ -702,7 +802,11 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
 			if(usWidth >= THROTTLE_FULL)
 			{
 				//Do Something
-				Start_Flag = true;
+				if(!software_deinit)
+				{
+					Start_Flag = true;
+					software_deinit = true;
+				}
 
 			}
 
@@ -718,12 +822,155 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
 			{
 				//Do something else
 				e_stop = true;
-				__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, htim3.Init.Period * _8_BIT_MAP(0)/100);
-				HAL_TIM_PWM_Stop(&htim3, TIM_CHANNEL_1);
+				__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_2, htim3.Init.Period * _8_BIT_MAP(PWM_STOP)/100);
+				HAL_TIM_PWM_Stop(&htim3, TIM_CHANNEL_2);
 
 			}
 			__HAL_TIM_SET_COUNTER(htim, 0);  // reset the counter
 			Is_First_Captured = 0; // set it back to false
+		}
+	}
+
+	else if(htim->Instance == TIM2)
+	{
+		if (Is_First_Captured2==0) // if the first rising edge is not captured
+		{
+			IC2_Val1 = HAL_TIM_ReadCapturedValue(htim, TIM_CHANNEL_3); // read the first value
+			Is_First_Captured2 = 1;  // set the first captured as true
+		}
+
+		else   // If the first rising edge is captured, now we will capture the second edge
+		{
+			IC2_Val2 = HAL_TIM_ReadCapturedValue(htim, TIM_CHANNEL_3);  // read second value
+
+			if (IC2_Val2 > IC2_Val1)
+			{
+				Difference2 = IC2_Val2-IC2_Val1;
+			}
+
+			else if (IC2_Val1 > IC2_Val2)
+			{
+				Difference2 = (0xffffffff - IC2_Val1) + IC2_Val2;
+			}
+
+			float refClock = TIMCLOCK/(PRESCALAR);
+
+			frequency2 = refClock/Difference2;
+
+			float mFactor = 1000000/refClock;
+
+			usWidth2 = Difference2*mFactor;
+
+			//Here the conditions begin, for now we can keep it simple
+			if(usWidth2 >= MAN_WINCH_UP)
+			{
+				//Manual Winch Up
+				// Todo: @refacotring required
+				/*
+				 * Depending on the payload set the PWM pulse.
+				 */
+				//HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, GPIO_PIN_SET); //GPIOC and PIN_0 changed
+				//HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_SET);
+
+
+				if(WHAT_PAYLOAD == PAYLOAD_2)
+				{
+					/*PWM is in 20*/
+					payload_at_20_up = true;
+					payload_at_30_up = false;
+					payload_at_0_up  = false;
+
+					payload_at_0_stop = false;
+
+					payload_at_20_down = false;
+					payload_at_30_down = false;
+					payload_at_0_down  = false;
+
+					//__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_2, htim3.Init.Period * _8_BIT_MAP(PWM_PAYLOAD_2)/100);
+				}
+
+				else if(WHAT_PAYLOAD == PAYLOAD_3)
+				{
+					/*PWM is in 30*/
+					payload_at_30_up = true;
+					payload_at_20_up = false;
+					payload_at_0_up  = false;
+
+					payload_at_0_stop = false;
+
+					payload_at_20_down = false;
+					payload_at_30_down = false;
+					payload_at_0_down  = false;
+
+					__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_2, htim3.Init.Period * _8_BIT_MAP(PWM_PAYLOAD_3)/100);
+				}
+
+			}
+
+			else if(usWidth2 >= MAN_WINCH_STOP && usWidth2 < MAN_WINCH_UP)
+			{
+				//Manual Winch Stop
+				payload_at_0_stop  = true;
+
+				payload_at_20_down = false;
+				payload_at_30_down = false;
+				payload_at_0_down  = false;
+
+				payload_at_30_up = false;
+				payload_at_20_up = false;
+				payload_at_0_up  = false;
+
+				__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_2, htim3.Init.Period * _8_BIT_MAP(PWM_STOP)/100);
+
+			}
+
+			else if(usWidth2 < MAN_WINCH_STOP)
+			{
+				//Manual Winch Down
+				//Manual Winch Up
+				// Todo: @refacotring required
+				//HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, GPIO_PIN_RESET); //GPIOC and PIN_0 changed
+				//HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_RESET);
+				/*
+				 * Depending on the payload set the PWM pulse.
+				 */
+				if(WHAT_PAYLOAD == PAYLOAD_2)
+				{
+					/*PWM is in 20*/
+					payload_at_20_down = true;
+					payload_at_30_down = false;
+					payload_at_0_down  = false;
+
+					payload_at_0_stop = false;
+
+					payload_at_30_up = false;
+					payload_at_20_up = false;
+					payload_at_0_up  = false;
+
+
+				//__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_2, htim3.Init.Period * _8_BIT_MAP(PWM_PAYLOAD_2)/100);
+				}
+
+				else if(WHAT_PAYLOAD == PAYLOAD_3)
+				{
+					/*PWM is in 30*/
+					payload_at_20_down = false;
+					payload_at_30_down = true;
+					payload_at_0_down  = false;
+
+					payload_at_0_stop = false;
+
+					payload_at_30_up = false;
+					payload_at_20_up = false;
+					payload_at_0_up  = false;
+
+
+					__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_2, htim3.Init.Period * _8_BIT_MAP(PWM_PAYLOAD_3)/100);
+				}
+
+			}
+			__HAL_TIM_SET_COUNTER(htim, 0);  // reset the counter
+			Is_First_Captured2 = 0; // set it back to false
 		}
 	}
 }
@@ -743,6 +990,24 @@ void HAL_SYSTICK_Callback()
 	indx++;  //Monitors the time
 	++tick;  // Updates the tick
 
+	if(payload_at_20_up)
+	{
+
+		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, GPIO_PIN_SET); //GPIOC and PIN_0 changed
+		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_SET);
+
+		__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_2, htim3.Init.Period * _8_BIT_MAP(PWM_PAYLOAD_2o)/100);
+	}
+
+	if(payload_at_20_down)
+	{
+
+		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, GPIO_PIN_RESET); //GPIOC and PIN_0 changed
+		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_RESET);
+
+		__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_2, htim3.Init.Period * _8_BIT_MAP(PWM_PAYLOAD_2o)/100);
+	}
+
 	if(Start_Flag)
 	{
 		++trig;
@@ -752,7 +1017,7 @@ void HAL_SYSTICK_Callback()
 			Start_Flag = false;
 
 			//DeInit the IC interrupt
-			HAL_TIM_IC_MspDeInit(&htim4);
+			//HAL_TIM_IC_MspDeInit(&htim4);
 
 
 		}
@@ -960,9 +1225,6 @@ void MX_UART2_Init(void)
 static void MX_TIM2_Init(void)
 {
 
-  TIM_Encoder_InitTypeDef sConfig = {0};
-  TIM_MasterConfigTypeDef sMasterConfig = {0};
-
   /* @note:
 
   	 * Clk = Peripheral_frequency //16MHz
@@ -974,31 +1236,37 @@ static void MX_TIM2_Init(void)
   	 *
   	 */
 
-  htim2.Instance = TIM2;
-  htim2.Init.Prescaler = 0;
-  htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim2.Init.Period = 65535;
-  htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
-  htim2.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
-  sConfig.EncoderMode = TIM_ENCODERMODE_TI12;
-  sConfig.IC1Polarity = TIM_ICPOLARITY_FALLING;
-  sConfig.IC1Selection = TIM_ICSELECTION_DIRECTTI;
-  sConfig.IC1Prescaler = TIM_ICPSC_DIV1;
-  sConfig.IC1Filter = 0;
-  sConfig.IC2Polarity = TIM_ICPOLARITY_FALLING;
-  sConfig.IC2Selection = TIM_ICSELECTION_DIRECTTI;
-  sConfig.IC2Prescaler = TIM_ICPSC_DIV1;
-  sConfig.IC2Filter = 0;
-  if (HAL_TIM_Encoder_Init(&htim2, &sConfig) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
-  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
-  if (HAL_TIMEx_MasterConfigSynchronization(&htim2, &sMasterConfig) != HAL_OK)
-  {
-    Error_Handler();
-  }
+	  TIM_MasterConfigTypeDef sMasterConfig = {0};
+	  TIM_IC_InitTypeDef sConfigIC = {0};
+
+	  /* USER CODE BEGIN TIM2_Init 1 */
+
+	  /* USER CODE END TIM2_Init 1 */
+	  htim2.Instance = TIM2;
+	  htim2.Init.Prescaler = 60-1;
+	  htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
+	  htim2.Init.Period = 4294967295;
+	  htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+	  htim2.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+	  if (HAL_TIM_IC_Init(&htim2) != HAL_OK)
+	  {
+		Error_Handler();
+	  }
+	  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+	  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+	  if (HAL_TIMEx_MasterConfigSynchronization(&htim2, &sMasterConfig) != HAL_OK)
+	  {
+		Error_Handler();
+	  }
+	  sConfigIC.ICPolarity = TIM_INPUTCHANNELPOLARITY_BOTHEDGE;
+	  sConfigIC.ICSelection = TIM_ICSELECTION_DIRECTTI;
+	  sConfigIC.ICPrescaler = TIM_ICPSC_DIV1;
+	  sConfigIC.ICFilter = 0;
+	  if (HAL_TIM_IC_ConfigChannel(&htim2, &sConfigIC, TIM_CHANNEL_3) != HAL_OK)
+	  {
+		Error_Handler();
+	  }
+
   /* USER CODE BEGIN TIM2_Init 2 */
 
   /* USER CODE END TIM2_Init 2 */

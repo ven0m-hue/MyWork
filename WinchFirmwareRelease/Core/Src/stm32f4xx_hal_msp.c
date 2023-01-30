@@ -244,6 +244,7 @@ void HAL_I2C_MspDeInit(I2C_HandleTypeDef* hi2c)
 * @param htim_encoder: TIM_Encoder handle pointer
 * @retval None
 */
+#if 0
 void HAL_TIM_Encoder_MspInit(TIM_HandleTypeDef* htim_encoder)
 {
   GPIO_InitTypeDef GPIO_InitStruct = {0};
@@ -273,7 +274,7 @@ void HAL_TIM_Encoder_MspInit(TIM_HandleTypeDef* htim_encoder)
   }
 
 }
-
+#endif
 /**
 * @brief TIM_PWM MSP Initialization
 * This function configures the hardware resources used in this example
@@ -307,9 +308,7 @@ void HAL_TIM_IC_MspInit(TIM_HandleTypeDef* htim_ic)
   GPIO_InitTypeDef GPIO_InitStruct = {0};
   if(htim_ic->Instance==TIM4)
   {
-  /* USER CODE BEGIN TIM4_MspInit 0 */
 
-  /* USER CODE END TIM4_MspInit 0 */
     /* Peripheral clock enable */
     __HAL_RCC_TIM4_CLK_ENABLE();
 
@@ -325,9 +324,31 @@ void HAL_TIM_IC_MspInit(TIM_HandleTypeDef* htim_ic)
     HAL_GPIO_Init(pixhawk_signal_GPIO_Port, &GPIO_InitStruct);
 
     /* TIM4 interrupt Init */
-   HAL_NVIC_SetPriority(TIM4_IRQn, 0, 0);
+   HAL_NVIC_SetPriority(TIM4_IRQn, 8, 0);
    HAL_NVIC_EnableIRQ(TIM4_IRQn);
   }
+
+  else if(htim_ic->Instance==TIM2)
+    {
+
+      /* Peripheral clock enable */
+      __HAL_RCC_TIM2_CLK_ENABLE();
+
+      __HAL_RCC_GPIOB_CLK_ENABLE();
+      /**TIM4 GPIO Configuration
+      PB10     ------> TIM2_CH3
+      */
+      GPIO_InitStruct.Pin = man_winch_Pin;
+      GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+      GPIO_InitStruct.Pull = GPIO_NOPULL;
+      GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+      GPIO_InitStruct.Alternate = GPIO_AF1_TIM2;
+      HAL_GPIO_Init(man_winch_GPIO_Port, &GPIO_InitStruct);
+
+      /* TIM4 interrupt Init */
+     HAL_NVIC_SetPriority(TIM2_IRQn, 6, 0);
+     HAL_NVIC_EnableIRQ(TIM2_IRQn);
+    }
 
 }
 
@@ -434,6 +455,24 @@ void HAL_TIM_IC_MspDeInit(TIM_HandleTypeDef* htim_ic)
 
   /* USER CODE END TIM4_MspDeInit 1 */
   }
+
+  if(htim_ic->Instance==TIM2)
+    {
+    /* USER CODE BEGIN TIM4_MspDeInit 0 */
+
+    /* USER CODE END TIM4_MspDeInit 0 */
+      /* Peripheral clock disable */
+      __HAL_RCC_TIM2_CLK_DISABLE();
+
+      /**TIM4 GPIO Configuration
+      PB6     ------> TIM4_CH1
+      */
+      HAL_GPIO_DeInit(man_winch_GPIO_Port, man_winch_Pin);
+
+    /* USER CODE BEGIN TIM4_MspDeInit 1 */
+
+    /* USER CODE END TIM4_MspDeInit 1 */
+    }
 
 }
 

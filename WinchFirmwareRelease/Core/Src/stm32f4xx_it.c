@@ -23,6 +23,7 @@
 /* Private includes ----------------------------------------------------------*/
 extern TIM_HandleTypeDef htim3;
 extern TIM_HandleTypeDef htim4;
+extern TIM_HandleTypeDef htim2;
 extern GPIO_InitTypeDef tim3ch1gpio;
 extern I2C_HandleTypeDef hi2c1;
 extern AS5600_Handle_t as5600;
@@ -193,6 +194,10 @@ void TIM4_IRQHandler(void)
   HAL_TIM_IRQHandler(&htim4);
 }
 
+void TIM2_IRQHandler(void)
+{
+  HAL_TIM_IRQHandler(&htim2);
+}
 
 void USART1_IRQHandler(void)
 {
@@ -272,6 +277,11 @@ void USART2_IRQHandler(void)
 	/*
 	 * This handler is reserved for the Mavlink interface. Future Implementation.
 	 */
+//	if(poop_back)
+//	{
+//		MavLinkReceive(&huart2, receivedData);
+//	}
+
 	HAL_UART_IRQHandler(&huart2);
 }
 /******************************************************************************/
@@ -347,7 +357,7 @@ void EXTI3_IRQHandler(void)
 
 		__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_2, htim3.Init.Period * 0/100);
 
-		for(int i =0; i<24000; i++)
+		for(int i =0; i<48000; i++)
 		{
 
 			__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_2, htim3.Init.Period * _8_BIT_MAP(PAYLOAD_3)/100);
@@ -357,7 +367,7 @@ void EXTI3_IRQHandler(void)
 		__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_2, htim3.Init.Period * 0/100);
 		//HAL_TIM_PWM_Stop(&htim3, TIM_CHANNEL_1);
 
-
+		HAL_GPIO_WritePin(blue_led_GPIO_Port, blue_led_Pin, GPIO_PIN_RESET);
 		poop_back = false;
 		spring_trig = true;
 
