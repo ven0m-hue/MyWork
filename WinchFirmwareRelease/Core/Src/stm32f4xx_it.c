@@ -41,7 +41,7 @@ extern I2C_HandleTypeDef hi2c1;
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN TD */
 extern bool Start_Flag;
-
+extern bool START_THE_SEQUENCE;
 extern bool bay_door_close;
 extern bool close_door;
 
@@ -310,7 +310,7 @@ void EXTI0_IRQHandler(void)
 
 		__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_2, htim3.Init.Period * _8_BIT_MAP(0)/100);
 
-
+		HAL_GPIO_WritePin(blue_led_GPIO_Port, blue_led_Pin, GPIO_PIN_SET);
 		//Flip the bay_door flag to initiate bayclose door seq
 		bay_door_close = true;
 
@@ -328,6 +328,10 @@ void EXTI0_IRQHandler(void)
 
 		//HAL_TIM_PWM_Stop(&htim3, TIM_CHANNEL_2);
 		spring_trig = false;
+		START_THE_SEQUENCE = false;
+
+
+
 	}
 
 
@@ -357,7 +361,7 @@ void EXTI3_IRQHandler(void)
 
 		__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_2, htim3.Init.Period * 0/100);
 
-		for(int i =0; i<48000; i++)
+		for(int i =0; i<96000; i++)
 		{
 
 			__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_2, htim3.Init.Period * _8_BIT_MAP(PAYLOAD_3)/100);

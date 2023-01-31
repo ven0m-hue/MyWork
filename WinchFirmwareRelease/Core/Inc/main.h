@@ -200,10 +200,10 @@ void Error_Handler(void);
 #define POOP_BACK_AT_H		14.00 //This is in meters, on when to activate the spring thing.
 
 //Magnetic Encoder
-#define __RADIUS			1.8//2.3  //This is in centi meters which is later converted to the meters.
+#define __RADIUS			2.3//1.8//2.3  //This is in centi meters which is later converted to the meters.
 
 //PController Macros
-#define LEN_TO_WINCH_DOWN	25//21.00
+#define LEN_TO_WINCH_DOWN	38//27//21.00
 #define THRESHOLD_LEN		20//16.4//18.00  //In meters.
 
 

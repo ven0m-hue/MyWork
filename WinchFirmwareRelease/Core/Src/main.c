@@ -16,7 +16,11 @@
 
 /*
  * TODO:
- * 1. Test rig compatible winch 2.0 full routine.
+ * 1. System Reset
+ * 2. Safety Routine
+ * 3. Payload delivery type
+ *
+ * 4. Customize the aruduplane firmware for winch bypass functionality.
  */
 
 /* Structure definitions ------------------------------------------------------------*/
@@ -77,7 +81,7 @@ int16_t Counts = 0;
 float Length = 0.0f;
 
 //Bool flag for the Winch Start Seq
-bool Start_Flag = false;
+bool Start_Flag = true;
 uint32_t trig = 0;  //keep tack of since the inception
 bool e_stop = false;
 bool START_THE_SEQUENCE = false;
@@ -311,16 +315,22 @@ int main(void)
 
 	//MX_WINCH_UP_MOTO_RAMP_UP_DOWN();
 	MX_WINCH_UP_P_CONTROLLER();
-	//Start the Door Close sequence
-	//MX_BomBay_Door_Close();
 
 	/*
 	 * After the entire sequence maybe enable the Timer 2 Channel 3 IC
 	 *
 	 * Just for now compare it with the length.
 	 */
-	if(Length < 0.0)
+	if(close_door)
+	{
 		HAL_TIM_IC_MspInit(&htim2);
+
+		if(HAL_TIM_IC_Start_IT(&htim2, TIM_CHANNEL_3)!= HAL_OK) Error_Handler();
+	}
+
+	//Start the Door Close sequence
+	//MX_BomBay_Door_Close();
+
 
 	while(1)
 	{}
@@ -602,7 +612,7 @@ void MX_WINCH_P_CONTROLLER(void)
 	uint32_t motor_output = 0;
 
 	pid.Ts = 10; // 10 milliseconds.
-	pid.kp = 2.0;
+	pid.kp = 3.5;
 	PID_Init(&pid);
 
 
@@ -644,9 +654,12 @@ void MX_WINCH_P_CONTROLLER(void)
 //				//Then Store the current Current  data in prev_curr
 //				prev_curr = curr_curr;
 //
-//				//Disable the current_affair
+				/*Disable the UART interrupt momentarily*/
+				//__HAL_UART_DISABLE_IT(&huart2, UART_IT_RXNE);
+//				/*Disable the current_affair*/
 //				poop_back = false;
 //				curr_curr = 0;
+
 //			}
 
 		//	else curr_curr = 0; /*This is to assure that new value has been updated*/
@@ -699,7 +712,7 @@ void MX_WINCH_UP_P_CONTROLLER(void)
 
 	float SetPoint = leg_len;
 	float Measurement = (SetPoint - Length);
-	float ThresholdLen = SetPoint * 0.90;
+	float ThresholdLen = SetPoint * 0.75;
 
 	while((Measurement <= SetPoint))
 	{
@@ -718,14 +731,20 @@ void MX_WINCH_UP_P_CONTROLLER(void)
 			 *Enable the close door flag
 			 */
 			close_door = true;
+			break;
 		}
 
-		Measurement = (SetPoint - Length);
+
+		/*Fail safe, if the winch motor does not close*/
+
 		if(Length < 0.2)
 		{
 			__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_2, htim3.Init.Period * _8_BIT_MAP(PWM_STOP)/100);
 			break;
 		}
+
+
+		Measurement = (SetPoint - Length);
 
 	}
 
@@ -805,7 +824,7 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
 				if(!software_deinit)
 				{
 					Start_Flag = true;
-					software_deinit = true;
+					software_deinit = false;
 				}
 
 			}
@@ -1013,13 +1032,13 @@ void HAL_SYSTICK_Callback()
 		++trig;
 		if(trig >= 5000)
 		{
+
+
 			START_THE_SEQUENCE = true;
 			Start_Flag = false;
 
 			//DeInit the IC interrupt
 			//HAL_TIM_IC_MspDeInit(&htim4);
-
-
 		}
 
 
