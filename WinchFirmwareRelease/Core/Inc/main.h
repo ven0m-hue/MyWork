@@ -200,6 +200,26 @@ void Error_Handler(void);
 #define POOP_BACK_AT_H		14.00 //This is in meters, on when to activate the spring thing.
 
 //Magnetic Encoder
+ 
+ /*
+ * Note on Radius of the spool.
+ * The below obtained value of the radius is a compensated value and not taken from the spool radisu as is.
+ * 1. Compensation is required since a lot of rope length gets curled within the loop and as the Sequence progresses the length of rope present in the spool reduces.
+ * 		Compensation here is done by taking in consideration of the height at which the rope is being un-reeled and having the notion of the total reeled rope length in the spool.
+ * 		Based on that decide the percentage of extra spool radius to be added.
+ * 		Rule of thumb is add 40-50% of extra spool radius.
+ *
+ * 2. Compensation is also required due to the elasticity of the rope.
+ *    If rope were to be modeled, is nothing but spring connected in series. The extra stretch of the rope needs to be compensated.
+ *    This depends on the weight and the height at which the rope is being reeled down.
+ * 	  Greater the weight suspended on the rope greater the stretch. And vice versa.
+ * 	  Greater the height stretch for that particular weight will be sustained for greater time period and adds an error to the height computation.
+ *
+ * 	  For 2kg payload and height of 17m stretch is 0.7m
+ * 	  For 2kg payload and height of 30m stretch is 1.7m
+ *
+ */
+ 
 #define __RADIUS			2.3//1.8//2.3  //This is in centi meters which is later converted to the meters.
 
 //PController Macros
