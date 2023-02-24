@@ -81,7 +81,7 @@ int16_t Counts = 0;
 float Length = 0.0f;
 
 //Bool flag for the Winch Start Seq
-bool Start_Flag = true;
+bool Start_Flag = false;
 uint32_t trig = 0;  //keep tack of since the inception
 bool e_stop = false;
 bool START_THE_SEQUENCE = false;
@@ -152,6 +152,8 @@ static void MX_BomBay_Door_Open(void);
 static void MX_BomBay_Door_Close(void);
 static void MX_Jump(void);
 
+
+uint32_t motor_output = 0;
 /* Private user code ---------------------------------------------------------*/
 void MX_Universal_Init()
 {
@@ -217,14 +219,14 @@ void MX_Peripheral_Start_Init()
 	 * i.e. if the raw angle is 20 deg, then every time the angle goes above 20 is one revolution.
 	 */
 	as5600.I2Chandle = &hi2c1;
-	while(!AS5600_Init(&as5600))
-	{
-		sprintf((char*)buf, "Can't detect the Magnet\r\n");
-		//HAL_UART_Transmit(&huart1, (uint8_t *)buf, sizeof(buf), HAL_MAX_DELAY);
-		HAL_Delay(500);
-	}
+//	while(!AS5600_Init(&as5600))
+//	{
+//		//sprintf((char*)buf, "Can't detect the Magnet\r\n");
+//		//HAL_UART_Transmit(&huart1, (uint8_t *)buf, sizeof(buf), HAL_MAX_DELAY);
+//		//HAL_Delay(500);
+//	}
 
-	HAL_Delay(500); /*Time to set*/
+	//HAL_Delay(500); /*Time to set*/   Why?????????
 
 	AS5600_GetRawAngle(&as5600);
 	CurrRead = as5600.rawAngle;
@@ -235,8 +237,8 @@ void MX_Peripheral_Start_Init()
 	Length = 0;
 	//sprintf((char*)buf, "Initial Angle : %d\r\n", rawAngle);
 	//HAL_UART_Transmit(&huart1, (uint8_t *)buf, sizeof(buf), HAL_MAX_DELAY);
-//
-	memset(buf, 0, sizeof(buf));
+
+	//memset(buf, 0, sizeof(buf));
 
 	/*Transmit to the terminal at start to confirm the initiation.*/
 	//user_data = "Initialization successful\r\n";
@@ -288,7 +290,7 @@ int main(void)
 
 	//HAL_Delay(2000); //Delay for the door to settle and prep for winch down.
 
-	MX_WINCH_DOWN_GP_RAMP_UP();
+	//MX_WINCH_DOWN_GP_RAMP_UP();
 
 
 	/*
@@ -303,14 +305,14 @@ int main(void)
 	 *
 	 */
 
-	MX_SOFT_START_P_CONTROLLER_RAMP_UP();
+	//MX_SOFT_START_P_CONTROLLER_RAMP_UP();
 
 	MX_WINCH_P_CONTROLLER();
 
 
 	leg_len = Length; //Store the length of the first leg.
 
-	HAL_Delay(4000);  //Delay time
+	HAL_Delay(2000);  //Delay time
 
 
 	//MX_WINCH_UP_MOTO_RAMP_UP_DOWN();
@@ -321,16 +323,24 @@ int main(void)
 	 *
 	 * Just for now compare it with the length.
 	 */
-	if(close_door)
-	{
-		HAL_TIM_IC_MspInit(&htim2);
-
-		if(HAL_TIM_IC_Start_IT(&htim2, TIM_CHANNEL_3)!= HAL_OK) Error_Handler();
-	}
+//	if(close_door)
+//	{
+//		HAL_TIM_IC_MspInit(&htim2);
+//
+//		if(HAL_TIM_IC_Start_IT(&htim2, TIM_CHANNEL_3)!= HAL_OK) Error_Handler();
+//	}
 
 	//Start the Door Close sequence
 	//MX_BomBay_Door_Close();
 
+	/*
+	 * Edge case: If the spring is never triggered. Disable it so has to avoid any false triggers on the way up.
+	 */
+
+	if(bay_door_close)
+	{
+		if(HAL_TIM_IC_Start_IT(&htim2, TIM_CHANNEL_3)!= HAL_OK) Error_Handler();
+	}
 
 	while(1)
 	{}
@@ -358,8 +368,19 @@ static void MX_WINCH_START_SEQ()
 	/*
 	 * Diable the Timer 2 Channel 3 IC
 	 */
-	HAL_TIM_IC_Stop(&htim2, TIM_CHANNEL_3);
-	HAL_TIM_IC_MspDeInit(&htim2);
+	HAL_TIM_IC_Stop_IT(&htim2, TIM_CHANNEL_3);
+
+	/*
+	 * Disable all the non-critical interrupts in the beginning.
+	 * Respective interrupts are enabled when they are required.
+	 */
+
+	HAL_NVIC_DisableIRQ(EXTI3_IRQn);  //Spring
+	HAL_NVIC_DisableIRQ(EXTI0_IRQn);  //Roof
+	HAL_NVIC_DisableIRQ(USART1_IRQn);
+	HAL_NVIC_DisableIRQ(USART2_IRQn);
+	HAL_NVIC_DisableIRQ(TIM2_IRQn);
+	HAL_NVIC_DisableIRQ(TIM4_IRQn);
 
 	/*
 	 * 1. Receive the hover current.
@@ -609,7 +630,7 @@ static void MX_SOFT_START_P_CONTROLLER_RAMP_UP(void)
 void MX_WINCH_P_CONTROLLER(void)
 {
 	PID_Handle_t pid;
-	uint32_t motor_output = 0;
+	//uint32_t motor_output = 0;
 
 	pid.Ts = 10; // 10 milliseconds.
 	pid.kp = 3.5;
@@ -631,6 +652,7 @@ void MX_WINCH_P_CONTROLLER(void)
 
 		if(Length >= THRESHOLD_LEN)
 		{
+			HAL_NVIC_EnableIRQ(EXTI3_IRQn);
 			poop_back = true;
 
 			/*
@@ -673,6 +695,8 @@ void MX_WINCH_P_CONTROLLER(void)
 
 	}
 
+
+
 	//__HAL_TIM_SET_COMPARE(&tim3, TIM_CHANNEL_1, tim3.Init.Period * 0/100);
 
 
@@ -686,6 +710,11 @@ void MX_WINCH_P_CONTROLLER(void)
 	}
 
 	__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_2, htim3.Init.Period * _8_BIT_MAP(0)/100);
+
+	if(!spring_trig)
+	{
+		HAL_NVIC_DisableIRQ(EXTI3_IRQn);
+	}
 
 	if(rev < 0) Counts = -rev;
 	else Counts = rev;
@@ -704,21 +733,23 @@ void MX_WINCH_UP_P_CONTROLLER(void)
 
 
 	PID_Handle_t pid;
-	uint32_t motor_output = 0;
+	//uint32_t motor_output = 0;
 
 	pid.Ts = 10; // 10 milliseconds.
-	pid.kp = 3;
+	pid.kp = 5;
 	PID_Init(&pid);
 
 	float SetPoint = leg_len;
-	float Measurement = (SetPoint - Length);
-	float ThresholdLen = SetPoint * 0.75;
+	float Measurement = 0;
+	float ThresholdLen = SetPoint * 0.97;
 
 	while((Measurement <= SetPoint))
 	{
 		motor_output = P_Compute(&pid, Measurement, SetPoint, uwTick);
 
-		if(motor_output <= 30) motor_output = __8BIT_OUTPUT_MIN;
+		if(motor_output <= 120) motor_output = 120;
+
+		else motor_output += __8BIT_ADD_MAX_OFFSET;
 
 		__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_2, htim3.Init.Period * _8_BIT_MAP(motor_output)/100);
 
@@ -730,6 +761,7 @@ void MX_WINCH_UP_P_CONTROLLER(void)
 			/*
 			 *Enable the close door flag
 			 */
+			HAL_NVIC_EnableIRQ(EXTI0_IRQn);
 			close_door = true;
 			break;
 		}
@@ -737,11 +769,11 @@ void MX_WINCH_UP_P_CONTROLLER(void)
 
 		/*Fail safe, if the winch motor does not close*/
 
-		if(Length < 0.2)
-		{
-			__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_2, htim3.Init.Period * _8_BIT_MAP(PWM_STOP)/100);
-			break;
-		}
+//		if(Length < 0.2)
+//		{
+//			__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_2, htim3.Init.Period * _8_BIT_MAP(PWM_STOP)/100);
+//			break;
+//		}
 
 
 		Measurement = (SetPoint - Length);

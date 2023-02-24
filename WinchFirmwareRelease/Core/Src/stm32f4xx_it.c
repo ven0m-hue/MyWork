@@ -374,6 +374,7 @@ void EXTI3_IRQHandler(void)
 		HAL_GPIO_WritePin(blue_led_GPIO_Port, blue_led_Pin, GPIO_PIN_RESET);
 		poop_back = false;
 		spring_trig = true;
+		HAL_NVIC_DisableIRQ(EXTI3_IRQn);
 
 	}
 

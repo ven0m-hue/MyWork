@@ -200,8 +200,9 @@ void Error_Handler(void);
 #define POOP_BACK_AT_H		14.00 //This is in meters, on when to activate the spring thing.
 
 //Magnetic Encoder
- 
- /*
+
+
+/*
  * Note on Radius of the spool.
  * The below obtained value of the radius is a compensated value and not taken from the spool radisu as is.
  * 1. Compensation is required since a lot of rope length gets curled within the loop and as the Sequence progresses the length of rope present in the spool reduces.
@@ -219,12 +220,12 @@ void Error_Handler(void);
  * 	  For 2kg payload and height of 30m stretch is 1.7m
  *
  */
- 
+
 #define __RADIUS			2.3//1.8//2.3  //This is in centi meters which is later converted to the meters.
 
 //PController Macros
-#define LEN_TO_WINCH_DOWN	38//27//21.00
-#define THRESHOLD_LEN		20//16.4//18.00  //In meters.
+#define LEN_TO_WINCH_DOWN	42//27//21.00
+#define THRESHOLD_LEN		38//16.4//18.00  //In meters.
 
 
 #define WHAT_PAYLOAD	PAYLOAD_2

@@ -13,8 +13,10 @@
 
 
 
-#define __8BIT_OUTPUT_MAX    180 
-#define __8BIT_OUTPUT_MIN    30  /*This min depends on the payload*/
+#define __8BIT_OUTPUT_MAX    	255
+#define __8BIT_OUTPUT_MIN    	30  /*This min depends on the payload*/
+#define __8BIT_OUTPUT_MAX_MAX	255
+#define __8BIT_ADD_MAX_OFFSET	(__8BIT_OUTPUT_MAX_MAX - __8BIT_OUTPUT_MAX)
 
 #define __MAXMEASUREMENT    780 // Lets say for now 
 
