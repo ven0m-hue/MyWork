@@ -52,7 +52,6 @@ char* data_btn = "Spring Thing!!!!";
 char* E_Stop = "Emergency Stop";
 char* parked = "Payload Parked";
 extern uint16_t rawAngle;
-extern __IO uint32_t spring_trig_count;
 /* External variables --------------------------------------------------------*/
 //extern PCD_HandleTypeDef hpcd_USB_OTG_FS;
 //extern DMA_HandleTypeDef hdma_adc1;
@@ -350,11 +349,6 @@ void EXTI3_IRQHandler(void)
 	 *  PB3
 	 */
 
-	/*
-	 * Just a check for how many times does the spring trigger
-	 */
-	spring_trig_count++;
-
  	if(poop_back)
 	{
 		//HAL_UART_Transmit(&huart1, (uint8_t *)data_btn, strlen(data_btn), HAL_MAX_DELAY);
@@ -374,7 +368,7 @@ void EXTI3_IRQHandler(void)
 		HAL_GPIO_WritePin(blue_led_GPIO_Port, blue_led_Pin, GPIO_PIN_RESET);
 		poop_back = false;
 		spring_trig = true;
-		HAL_NVIC_DisableIRQ(EXTI3_IRQn);
+		//HAL_NVIC_DisableIRQ(EXTI3_IRQn);
 
 	}
 

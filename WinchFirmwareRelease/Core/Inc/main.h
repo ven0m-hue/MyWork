@@ -104,7 +104,7 @@ void Error_Handler(void);
 
 
 
-//MISC Macros
+////////////////////////////MISC Macros///////////////////////////////////
 #define DutyCycle(X)      ((X)*0.033 + 33)
 #define DutyCycleServo(X) ((X)*0.3611111111 + 15)
 
@@ -117,6 +117,15 @@ void Error_Handler(void);
 
 
 #define __PWM_CCR_CHECK		2.5098
+
+
+///////////////////////////MAVLINK Macros/////////////////////////////////
+/*
+ * Based on the mavlink specification https://mavlink.io/en/messages/common.html#MAV_WINCH_STATUS_FLAG
+ */
+#define	MAV_EMERGENCY_STOP		MAV_WINCH_STATUS_ARRESTING
+#define MAV_SUCCESSFUL			MAV_WINCH_STATUS_HEALTHY
+#define MAV_SEMI_SUCCESSFUL 	MAV_WINCH_STATUS_ARRESTING
 
 //////////////////////////WINCH MACROS////////////////////////////////////
 
@@ -177,7 +186,7 @@ void Error_Handler(void);
 #define PWM_PAYLOAD_3   PAYLOAD_3
 #define PWM_STOP		0
 
-#define PWM_PAYLOAD_2o 40
+#define PWM_PAYLOAD_2o 80
 
 
 //For PixHawk Interfacing
@@ -225,8 +234,13 @@ void Error_Handler(void);
 
 //PController Macros
 #define LEN_TO_WINCH_DOWN	42//27//21.00
-#define THRESHOLD_LEN		38//16.4//18.00  //In meters.
-
+#define THRESHOLD_LEN		20//38//16.4//18.00  //In meters.
+#define LINE_LENGTH			30
+#define LINE_SPEED			2
+#define LINE_TENSION		1
+#define LINE_VOLTAGE		12
+#define LINE_CURRENT		10
+#define LINE_TEMP			0
 
 #define WHAT_PAYLOAD	PAYLOAD_2
 

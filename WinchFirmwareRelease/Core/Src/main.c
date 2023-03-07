@@ -86,6 +86,8 @@ uint32_t trig = 0;  //keep tack of since the inception
 bool e_stop = false;
 bool START_THE_SEQUENCE = false;
 
+bool enable_man_winch = false;
+
 //Spring thing variables
 bool poop_back = false;
 bool spring_trig = false;
@@ -147,6 +149,7 @@ static void MX_WINCH_DOWN_GP_RAMP_UP(void);
 static void MX_SOFT_START_P_CONTROLLER_RAMP_UP(void);
 void MX_WINCH_P_CONTROLLER(void);
 void MX_WINCH_UP_P_CONTROLLER(void);
+void MX_CONST_WINCH_DOWN_FAILSAFE(void);
 
 static void MX_BomBay_Door_Open(void);
 static void MX_BomBay_Door_Close(void);
@@ -227,8 +230,11 @@ void MX_Peripheral_Start_Init()
 //	}
 
 	//HAL_Delay(500); /*Time to set*/   Why?????????
+	while(uwTick < 50)
+	{
+		AS5600_GetRawAngle(&as5600);
+	}
 
-	AS5600_GetRawAngle(&as5600);
 	CurrRead = as5600.rawAngle;
 
 	LastRead = CurrRead;
@@ -318,29 +324,25 @@ int main(void)
 	//MX_WINCH_UP_MOTO_RAMP_UP_DOWN();
 	MX_WINCH_UP_P_CONTROLLER();
 
+
+
+
 	/*
 	 * After the entire sequence maybe enable the Timer 2 Channel 3 IC
 	 *
 	 * Just for now compare it with the length.
 	 */
-//	if(close_door)
-//	{
-//		HAL_TIM_IC_MspInit(&htim2);
-//
-//		if(HAL_TIM_IC_Start_IT(&htim2, TIM_CHANNEL_3)!= HAL_OK) Error_Handler();
-//	}
 
 	//Start the Door Close sequence
 	//MX_BomBay_Door_Close();
 
-	/*
-	 * Edge case: If the spring is never triggered. Disable it so has to avoid any false triggers on the way up.
-	 */
+	while(!bay_door_close);
+	HAL_NVIC_EnableIRQ(TIM2_IRQn);
 
-	if(bay_door_close)
-	{
-		if(HAL_TIM_IC_Start_IT(&htim2, TIM_CHANNEL_3)!= HAL_OK) Error_Handler();
-	}
+	MavlinkWinchStatus(&huart2, uwTick, LINE_LENGTH, LINE_SPEED, LINE_TENSION, LINE_VOLTAGE, LINE_CURRENT, LINE_TEMP, MAV_SUCCESSFUL);
+
+	//Reset the entire Winch Sequence.
+	//HAL_NVIC_SystemReset();
 
 	while(1)
 	{}
@@ -368,7 +370,7 @@ static void MX_WINCH_START_SEQ()
 	/*
 	 * Diable the Timer 2 Channel 3 IC
 	 */
-	HAL_TIM_IC_Stop_IT(&htim2, TIM_CHANNEL_3);
+	//HAL_TIM_IC_Stop_IT(&htim2, TIM_CHANNEL_3);
 
 	/*
 	 * Disable all the non-critical interrupts in the beginning.
@@ -380,7 +382,7 @@ static void MX_WINCH_START_SEQ()
 	HAL_NVIC_DisableIRQ(USART1_IRQn);
 	HAL_NVIC_DisableIRQ(USART2_IRQn);
 	HAL_NVIC_DisableIRQ(TIM2_IRQn);
-	HAL_NVIC_DisableIRQ(TIM4_IRQn);
+
 
 	/*
 	 * 1. Receive the hover current.
@@ -423,10 +425,30 @@ void MX_BomBay_Door_Close()
 	{
 		HAL_GPIO_WritePin(winch_dir_GPIO_Port, winch_dir_Pin, GPIO_PIN_SET);
 		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, GPIO_PIN_SET);
+
+		//Close Bomb Bay door Start.
 		__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, htim3.Init.Period * _8_BIT_MAP(BOMBAY_OPEN_CLOSE)/100);
 
 		HAL_Delay(2200);
+
+		//Close Bomb Bay door Close.
 		__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, htim3.Init.Period * _8_BIT_MAP(0)/100);
+
+		//Signal the FCU for the completion of the sequence.
+		/*
+		 * All the param are set in the Initialization block
+		 * current is updated on the fly
+		 * temp is not required
+		 * status: emergency stop | successful | partially successful
+		 *
+		 * Emergency stop : something went wrong and aircraft is in danger and notify FCU-> Initiate in the severing sequence.
+		 * Successful : Full sequence completion notification to the FCU
+		 * Partial Successful : Only winch Down was successful now retract the winch or do manual winch up.
+		 */
+		MavlinkWinchStatus(&huart2, uwTick, LINE_LENGTH, LINE_SPEED, LINE_TENSION, LINE_VOLTAGE, LINE_CURRENT, LINE_TEMP, MAV_SUCCESSFUL);
+
+		//Reset the entire Winch Sequence.
+		HAL_NVIC_SystemReset();
 	}
 
 	else
@@ -638,7 +660,7 @@ void MX_WINCH_P_CONTROLLER(void)
 
 
 
-	while((Length <= LEN_TO_WINCH_DOWN)  && !(spring_trig))
+	while((Length <= LEN_TO_WINCH_DOWN)  && !(spring_trig) && !(enable_man_winch))
 	{
 		motor_output = P_Compute(&pid, Length, LEN_TO_WINCH_DOWN, uwTick);
 
@@ -695,11 +717,6 @@ void MX_WINCH_P_CONTROLLER(void)
 
 	}
 
-
-
-	//__HAL_TIM_SET_COMPARE(&tim3, TIM_CHANNEL_1, tim3.Init.Period * 0/100);
-
-
 	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_SET);
 
 	for(int i =0; i<12000; i++)
@@ -711,11 +728,18 @@ void MX_WINCH_P_CONTROLLER(void)
 
 	__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_2, htim3.Init.Period * _8_BIT_MAP(0)/100);
 
-	if(!spring_trig)
-	{
-		HAL_NVIC_DisableIRQ(EXTI3_IRQn);
-	}
+	/*
+	 * Edge case: If the spring is never triggered. Disable it so has to avoid any false triggers on the way up.
+	 */
+	HAL_NVIC_DisableIRQ(EXTI3_IRQn);
 
+
+	if(enable_man_winch)
+		__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_2, htim3.Init.Period * _8_BIT_MAP(PWM_STOP)/100);
+
+	/*
+	 * Saves the no.of revolutions
+	 */
 	if(rev < 0) Counts = -rev;
 	else Counts = rev;
 
@@ -743,7 +767,7 @@ void MX_WINCH_UP_P_CONTROLLER(void)
 	float Measurement = 0;
 	float ThresholdLen = SetPoint * 0.97;
 
-	while((Measurement <= SetPoint))
+	while((Measurement <= SetPoint) && !(enable_man_winch))
 	{
 		motor_output = P_Compute(&pid, Measurement, SetPoint, uwTick);
 
@@ -779,6 +803,22 @@ void MX_WINCH_UP_P_CONTROLLER(void)
 		Measurement = (SetPoint - Length);
 
 	}
+
+	if(enable_man_winch)
+		__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_2, htim3.Init.Period * _8_BIT_MAP(PWM_STOP)/100);
+
+}
+
+void MX_CONST_WINCH_DOWN_FAILSAFE(void)
+{
+
+	/*
+	 * Constantly Winch Down if the encoder stops reading the signal
+	 * OR Skips the reading.
+	 */
+
+	//Logic to implement that.
+
 
 }
 
@@ -867,14 +907,36 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
 				Start_Flag = false;
 				trig = 0;
 
+				if(enable_man_winch)
+				{
+					HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_2);
+					HAL_NVIC_DisableIRQ(TIM4_IRQn);
+
+				}
+
 			}
 
 			else if(usWidth < THROTTLE_HALF)
 			{
-				//Do something else
+				//Set the flag to indicate the emergency stop.
 				e_stop = true;
+
+				//Error signaling to the FCU.
+				MavlinkWinchStatus(&huart2, uwTick, LINE_LENGTH, LINE_SPEED, LINE_TENSION, LINE_VOLTAGE, LINE_CURRENT, LINE_TEMP, MAV_EMERGENCY_STOP);
+
+				//Stop the Motor.
 				__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_2, htim3.Init.Period * _8_BIT_MAP(PWM_STOP)/100);
+
+				//Stop the PWM Generation.
 				HAL_TIM_PWM_Stop(&htim3, TIM_CHANNEL_2);
+
+				//Come out of the on going Position Control routine.
+				enable_man_winch = true;
+
+				//Re-start IC channel
+				HAL_NVIC_EnableIRQ(TIM2_IRQn);
+
+//				HAL_NVIC_EnableIRQ(USART2_IRQn); //For Mavlink packets
 
 			}
 			__HAL_TIM_SET_COUNTER(htim, 0);  // reset the counter

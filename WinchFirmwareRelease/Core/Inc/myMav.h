@@ -295,19 +295,17 @@ uint8_t MavlinkDoCMDSend(UART_HandleTypeDef* huart)
 }
 
 
-uint8_t MavlinkWinchStatus(UART_HandleTypeDef* huart)
+uint8_t MavlinkWinchStatus(UART_HandleTypeDef* huart, uint64_t time_usec, float line_length, float speed, float tension, float voltage, float current, int16_t temp, uint32_t status)
 {
 
 	mavlink_message_t msg;
 	uint8_t buf[MAVLINK_MAX_PACKET_LEN];
 
 	// Pack the message
-	mavlink_msg_winch_status_pack(1, MAV_COMP_ID_USER1, &msg, uwTick, 20, 2, 1, 12, 5, 20, 1);
+	mavlink_msg_winch_status_pack(1, MAV_COMP_ID_USER1, &msg, uwTick, line_length, speed, tension, voltage, current, temp, status);
 
 	// Copy the message to the send buffer
 	uint16_t len = mavlink_msg_to_send_buffer(buf, &msg);
-
-	HAL_Delay(2000);
 
 	HAL_UART_Transmit(huart, (uint8_t*)buf, len, HAL_MAX_DELAY);
 
